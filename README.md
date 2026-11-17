@@ -3,9 +3,17 @@
 Piattaforma web in italiano per sostenere l'autoregolazione dell'apprendimento con un agente pedagogico conversazionale.
 Committente scientifico: Prof. Angelo Rega.
 
-**Stato: MVP con modalità Attività libera (aggiornamento 0.10.0).** Frontend HTML/CSS/JavaScript senza dipendenze, backend PHP, database MySQL/MariaDB.
+**Stato: MVP con modalità Attività libera (aggiornamento 0.10.1).** Frontend HTML/CSS/JavaScript senza dipendenze, backend PHP, database MySQL/MariaDB.
 
 > La riuscita tecnica dell'MVP non equivale alla sua validazione scientifica: soglie, livelli di supporto, codebook e lessico di polarità sono parametri progettuali da validare.
+
+## Versione 0.10.1 — restyling UI dell’area professionale
+
+Intervento esclusivamente sul CSS dell’area psicologo: sidebar verde petrolio, barra superiore più leggera, indicatori con numeri e note più leggibili, filtri ordinati, schede e tabelle uniformi, moduli e protocolli più ariosi. Adattamenti per tablet/smartphone, modalità contrasto elevato e riduzione delle animazioni mantenute. Nessuna dipendenza, font esterno o chiamata di rete aggiunta.
+
+Le regole sono circoscritte a `.professional-layout` e alla barra superiore quando tale layout è presente. Homepage, area studente e super admin mantengono gli stili precedenti. JavaScript, PHP, API, database e contenuti dei dati sono identici alla 0.10.0. I test DOM non sostituiscono una verifica visiva sui dispositivi reali.
+
+Nessuna nuova migrazione. Caricare il pacchetto conservando config.php, .env e storage/, quindi aprire refresh.php.
 
 ## Versione 0.10.0 — area super admin
 

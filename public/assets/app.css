@@ -427,3 +427,165 @@ input[type=checkbox], input[type=radio] { min-height: 24px; min-width: 24px; acc
 .admin-content textarea {min-height:5rem;}
 .admin-image-preview {max-width:100%;height:auto;max-height:200px;object-fit:contain;}
 .site-managed-image {display:block;max-width:100%;width:100%;height:auto;border-radius:12px;}
+
+/* ABLET 0.10.1 · Restyling esclusivamente visivo dello spazio professionale.
+   Le regole sono circoscritte al layout psicologo, senza cambiare strutture o azioni. */
+@supports selector(body:has(.professional-layout)) {
+  body:has(.professional-layout) {
+    --bg:#f2f5f5; --surface:#ffffff; --surface-2:#eef3f2;
+    --ink:#203b3a; --ink-2:#526866; --line:#dce6e3;
+    --brand:#24685e; --brand-soft:#e5f1eb; --accent:#a94425;
+    --shadow:0 2px 4px #143e3403,0 8px 26px #143e3406;
+    background:var(--bg);
+  }
+  body:has(.professional-layout) .top {
+    background:var(--surface); color:var(--ink); border-bottom:1px solid var(--line);
+    box-shadow:0 4px 18px #183d3305; padding:.85rem clamp(.8rem,2vw,1.8rem); gap:.9rem;
+  }
+  body:has(.professional-layout) .top .brand {font-size:1.15rem;letter-spacing:.08em;}
+  body:has(.professional-layout) .top .brand i {background:linear-gradient(135deg,#2f796a,#174b43);width:1.8rem;height:1.8rem;}
+  body:has(.professional-layout) .top button {background:#f5f8f7;color:#315f56;border:1px solid #d4e1dc;font-size:.8rem;min-height:2.5rem;}
+  body:has(.professional-layout) .top button:hover {background:#e9f1ee;border-color:#6c978b;}
+  body:has(.professional-layout) .top button[aria-pressed=true] {background:var(--brand);color:white;border-color:var(--brand);}
+  body:has(.professional-layout) .top a {color:var(--brand);text-underline-offset:3px;font-size:.77rem;}
+  body:has(.professional-layout) .top > .small {font-size:.78rem;}
+  html.contrast body:has(.professional-layout) {--bg:#fff;--surface:#fff;--surface-2:#f0f0f0;--ink:#000;--ink-2:#1a1a1a;--line:#555;--brand:#0b4f4a;--brand-soft:#e5eee9;--accent:#8a2f0e;}
+}
+.professional-layout {grid-template-columns:14.5rem minmax(0,1fr);gap:clamp(1rem,2.1vw,2rem);padding-top:.4rem;}
+.professional-layout .application-navigation {
+  background:linear-gradient(165deg,#143f3c,#1e5049);color:#eef7f1;
+  border:1px solid #204e47;border-radius:20px;padding:1rem .8rem;top:8rem;
+  box-shadow:0 12px 28px #123a3210;
+}
+.professional-layout .application-navigation .tabs {gap:.35rem;padding-bottom:.8rem;margin-bottom:.5rem;border-bottom:1px solid #ffffff26;}
+.professional-layout .application-navigation .tabs button,
+.professional-layout .application-settings button {
+  color:#e4f2eb;background:transparent;border:1px solid transparent;border-radius:11px;
+  text-align:left;padding:.7rem .85rem;min-height:46px;font-size:.87rem;font-weight:500;
+  line-height:1.4;transition:background-color .14s ease,border-color .14s ease;
+}
+.professional-layout .application-navigation .tabs button:hover,
+.professional-layout .application-settings button:hover {background:#ffffff12;border-color:#ffffff30;}
+.professional-layout .application-navigation .tabs button[aria-current=page],
+.professional-layout .application-settings button[aria-current=page] {
+  background:#e5f1e9;color:#123f35;border-color:#e5f1e9;box-shadow:inset 3px 0 0 #88ba9c;font-weight:750;
+}
+.professional-layout .application-settings {background:transparent;border:0;border-radius:0;padding:.5rem .15rem 0;}
+.professional-layout .application-settings summary {color:#e2eee6;font-size:.79rem;line-height:1.5;padding:.6rem .5rem;gap:.5rem;}
+.professional-layout .application-settings[open] summary {margin-bottom:.35rem;}
+.professional-layout .application-settings nav {gap:.2rem;padding-top:.2rem;}
+.professional-layout .application-settings button {font-size:.81rem;padding:.6rem .7rem;}
+.professional-layout .application-navigation :focus-visible {outline-color:#b9dfeb;outline-offset:3px;}
+.professional-layout .application-content {min-width:0;color:var(--ink);font-size:.94rem;}
+.professional-layout .application-content > h1,
+.professional-layout .application-content > .row > h1 {font-size:clamp(1.6rem,2.5vw,2.15rem);font-weight:750;letter-spacing:-.04em;margin:.15rem 0 1rem;}
+.professional-layout .application-content h2 {font-size:1.18rem;letter-spacing:-.02em;font-weight:720;}
+.professional-layout .application-content h3 {font-size:.99rem;font-weight:700;line-height:1.4;}
+.professional-layout .application-content p {line-height:1.65;}
+.professional-layout .application-content > .small.muted {margin:.9rem .1rem 1.3rem;font-size:.79rem;line-height:1.65;}
+.professional-layout .application-content .card {
+  background:var(--surface);border:1px solid var(--line);border-radius:17px;
+  box-shadow:0 3px 20px #1d403705;padding:clamp(1rem,1.7vw,1.4rem);
+}
+.professional-layout .application-content .grid {gap:1rem;}
+.professional-layout .application-content .card:has(> .kpi) {position:relative;overflow:hidden;border-top:3px solid #8ab6a3;padding:1.15rem;}
+.professional-layout .application-content .card:has(> .kpi):nth-child(3n+2) {border-top-color:#7ca4bc;}
+.professional-layout .application-content .card:has(> .kpi):nth-child(3n) {border-top-color:#c6b07c;}
+.professional-layout .application-content .card:has(> .kpi) > .small {font-size:.76rem;font-weight:600;line-height:1.5;margin-bottom:.8rem;}
+.professional-layout .application-content .kpi {font-size:clamp(1.9rem,2.5vw,2.55rem);letter-spacing:-.045em;font-weight:750;line-height:1.15;font-variant-numeric:tabular-nums;}
+.professional-layout .application-content .kpi small {display:block;font-size:.74rem;font-weight:450;letter-spacing:0;line-height:1.5;margin-top:.45rem;}
+.professional-layout .application-content button {font-size:.84rem;font-weight:600;min-height:44px;border-radius:10px;padding:.55rem .85rem;line-height:1.4;transition:background-color .14s ease,border-color .14s ease;}
+.professional-layout .application-content button:not(:disabled):hover {border-color:#759e91;background:#edf4ef;}
+.professional-layout .application-content button.primary {background:var(--brand);color:var(--brand-ink);border-color:var(--brand);}
+.professional-layout .application-content button.primary:not(:disabled):hover {background:#1a5148;border-color:#1a5148;}
+.professional-layout .application-content button.accent {background:var(--accent);color:#fff;border-color:var(--accent);}
+.professional-layout .application-content button.accent:not(:disabled):hover {background:#8e391f;border-color:#8e391f;}
+.professional-layout .application-content button.danger:not(:disabled):hover {background:#fff0ee;border-color:var(--danger);}
+.professional-layout .application-content button:disabled {opacity:.5;}
+.professional-layout .application-content label {font-size:.81rem;color:var(--ink-2);font-weight:650;margin:.7rem 0 .35rem;line-height:1.45;}
+.professional-layout .application-content label.inline {font-weight:500;gap:.55rem;}
+.professional-layout .application-content input,
+.professional-layout .application-content select,
+.professional-layout .application-content textarea {border-color:#cfded8;background:#fbfdfc;border-radius:10px;font-size:.91rem;padding:.65rem .75rem;min-height:44px;}
+.professional-layout .application-content input[type=checkbox],
+.professional-layout .application-content input[type=radio] {min-height:auto;accent-color:var(--brand);}
+.professional-layout .application-content input:focus,
+.professional-layout .application-content select:focus,
+.professional-layout .application-content textarea:focus {background:#fff;border-color:var(--brand);}
+.professional-layout .application-content textarea {line-height:1.65;}
+.professional-layout .application-content > form.card.row:first-child {
+  display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,10rem),1fr));gap:.9rem;align-items:end;
+  background:var(--surface);border-radius:17px;margin-top:0;margin-bottom:1.3rem;
+}
+.professional-layout .application-content > form.card.row:first-child label {margin-top:0;}
+.professional-layout .application-content .scroll {border:1px solid var(--line);border-radius:14px;background:var(--surface);scrollbar-color:#9cb8ac #edf2ef;}
+.professional-layout .application-content .card.scroll {padding:0;}
+.professional-layout .application-content .card.scroll > h2 {padding:1.1rem 1.2rem .6rem;margin:0;}
+.professional-layout .application-content table {font-size:.86rem;font-variant-numeric:tabular-nums;}
+.professional-layout .application-content .scroll table {min-width:40rem;}
+.professional-layout .application-content th {background:#f0f5f2;color:#4d6860;font-weight:700;font-size:.74rem;letter-spacing:.07em;padding:.85rem .8rem;white-space:nowrap;}
+.professional-layout .application-content td {padding:.9rem .8rem;border-bottom:1px solid #e6eeea;line-height:1.5;}
+.professional-layout .application-content tbody tr:nth-child(even) {background:#fbfcfb;}
+.professional-layout .application-content tbody tr:hover {background:#edf5f1;}
+.professional-layout .application-content tbody tr:last-child td {border-bottom:0;}
+.professional-layout .application-content .chip {border-radius:7px;font-size:.76rem;line-height:1.6;padding:.16rem .5rem;font-weight:650;}
+.professional-layout .application-content .chart {margin:0;box-shadow:none;}
+.professional-layout .application-content .chart figcaption {padding-bottom:.7rem;}
+.professional-layout .application-content .chart svg {background:#fafcfb;border:1px solid #edf2ef;}
+.professional-layout .application-content .chart .legend {font-size:.78rem;gap:.65rem;margin:.3rem 0 .6rem;}
+.professional-layout .application-content .chart .tools {gap:.4rem;margin-top:.7rem;flex-wrap:wrap;}
+.professional-layout .application-content .chart .tools button {font-size:.76rem;min-height:44px;padding:.35rem .65rem;color:var(--ink-2);background:#f6f9f7;border-color:var(--line);}
+.professional-layout .application-content details.card > summary {font-size:.92rem;line-height:1.5;padding:.15rem 0;}
+.professional-layout .application-content details.card[open] > summary {border-bottom:1px solid var(--line);padding-bottom:.85rem;margin-bottom:.9rem;}
+.professional-layout .application-content .student-list article {border-top:3px solid #a5c4b3;}
+.professional-layout .application-content .student-list article > .primary {margin-bottom:1rem;}
+.professional-layout .application-content .srl-navigation a {background:#e8f2ec;color:#245344;border:1px solid #c4dace;border-radius:12px;min-height:56px;font-size:.84rem;line-height:1.45;padding:.85rem;}
+.professional-layout .application-content .srl-navigation a:hover {background:#dcece1;border-color:#759e91;}
+.professional-layout .application-content .protocol-section {border-left:3px solid #89b59f;}
+.professional-layout .application-content .programme-step {border-left-width:3px;}
+.professional-layout .application-content .programme-step legend {font-size:.86rem;padding:.3rem .7rem;}
+.professional-layout .application-content .editor-actions {box-shadow:0 -6px 28px #153d3010;border-radius:14px;gap:.65rem;}
+.professional-layout .application-content .msg-log .m {border-radius:12px;padding:.9rem 1rem;margin:.7rem 0;line-height:1.7;border-color:var(--line);overflow-wrap:anywhere;}
+.professional-layout .application-content .msg-log .m.student {background:#edf5ef;border-left:3px solid #8cb59a;}
+.professional-layout .application-content .msg-log .m.agent {background:#fafcfc;border-left:3px solid #a6bec8;}
+.professional-layout .application-content .msg-log .m > .small {font-size:.71rem;font-weight:600;letter-spacing:.025em;margin-bottom:.4rem;}
+.professional-layout .application-content .banner {line-height:1.6;border-radius:12px;font-size:.85rem;}
+@media(min-width:64rem) {
+  .professional-layout .application-navigation {max-height:calc(100dvh - 9rem);overflow-y:auto;scrollbar-width:thin;scrollbar-color:#71948c transparent;}
+}
+@media(max-width:63.99rem) {
+  .professional-layout {grid-template-columns:minmax(0,1fr);gap:1.2rem;}
+  .professional-layout .application-navigation {position:static;border-radius:15px;padding:.8rem 1rem;}
+  .professional-layout .application-navigation > .navigation-toggle {color:#eff8f2;font-size:.9rem;padding:.3rem 0;}
+  .professional-layout .application-navigation .tabs {padding-top:.7rem;margin-top:.4rem;gap:.4rem;}
+  .professional-layout .application-navigation .tabs button {flex:1 1 10rem;min-height:46px;}
+  .professional-layout .application-settings nav {display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,12rem),1fr));gap:.3rem;}
+  .professional-layout .application-content .protocol-section {scroll-margin-top:1rem;}
+}
+@media(max-width:40rem) {
+  .professional-layout {gap:.9rem;}
+  .professional-layout .application-content {font-size:.95rem;}
+  .professional-layout .application-content .card {border-radius:13px;padding:1rem;}
+  .professional-layout .application-content .card.scroll {padding:0;}
+  .professional-layout .application-content .grid {gap:.8rem;}
+  .professional-layout .application-content > form.card.row:first-child {grid-template-columns:minmax(0,1fr);gap:.75rem;}
+  .professional-layout .application-content .srl-navigation {grid-template-columns:minmax(0,1fr);}
+  .professional-layout .application-content .editor-actions {position:static;}
+  .professional-layout .application-content .editor-actions button {width:100%;min-height:46px;}
+}
+html.contrast .professional-layout .application-navigation {background:#102f29;border-color:#000;}
+html.contrast .professional-layout .application-navigation .tabs button,
+html.contrast .professional-layout .application-settings button,
+html.contrast .professional-layout .application-settings summary {color:#fff;}
+html.contrast .professional-layout .application-navigation button[aria-current=page] {background:#fff;color:#000;border-color:#fff;box-shadow:inset 4px 0 #000;}
+html.contrast .professional-layout .application-content .card,
+html.contrast .professional-layout .application-content .scroll,
+html.contrast .professional-layout .application-content input,
+html.contrast .professional-layout .application-content textarea,
+html.contrast .professional-layout .application-content select {border-color:#555;box-shadow:none;}
+html.contrast .professional-layout .application-content th {color:#000;background:#ededed;}
+html.contrast .professional-layout .application-content td {border-color:#777;}
+html.contrast .professional-layout .application-content label {color:#111;}
+html.contrast .professional-layout .application-content .chart .tools button {color:#111;border-color:#555;}
+html.calm .professional-layout *,html.calm body:has(.professional-layout) .top * {transition:none!important;}
+@media(prefers-reduced-motion:reduce) {.professional-layout *{transition:none!important;}}
