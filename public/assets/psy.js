@@ -7,7 +7,7 @@ let main, view, B = null, tab = 'dash', voiceCleanup = () => {};
 let dirty = false, navigationCleanup = () => {};
 const leaveEditor = () => !dirty || confirm('Ci sono modifiche non salvate. Uscire senza salvarle?');
 addEventListener('beforeunload', e => { if (dirty) { e.preventDefault(); e.returnValue = ''; } });
-const TABS = [['dash','Panoramica'],['students','Studenti'],['protocols','Protocolli'],['activities','Attività'],['manual','Manuale e tutorial']];
+const TABS = [['dash','Panoramica'],['tokens','Consumi token'],['students','Studenti'],['protocols','Protocolli'],['activities','Attività'],['manual','Manuale e tutorial']];
 const SETTINGS = [['account','Il mio profilo'],['providers','Provider'],['voice','Voce e avatar'],['coding','Validazione codifiche'],['privacy','Dati e autorizzazioni']];
 const STATE = { created: 'Non avviata', forethought: 'Pianificazione', performance: 'Lavoro', self_reflection: 'Riflessione', paused: 'In pausa', safety_hold: 'Sospensione di sicurezza', closed_complete: 'Conclusa', closed_incomplete: 'Chiusa incompleta' };
 const LEVELS = ['0 · autonomo con checkpoint essenziali', '1 · supporto su richiesta', '2 · guida condivisa', '3 · guida strutturata'];
@@ -31,7 +31,32 @@ export async function mount(el) {
   // Su dispositivi piccoli il menu parte chiuso; il contenuto resta raggiungibile senza overlay.
   if (typeof matchMedia === 'function') { const narrow=matchMedia('(max-width: 63.99rem)'); menu.open=!narrow.matches; const adapt=()=>{menu.open=!narrow.matches;}; narrow.addEventListener?.('change',adapt); navigationCleanup=()=>narrow.removeEventListener?.('change',adapt); }
   clear(main).append(h('div',{class:'professional-layout'},menu, view));
-  ({ dash, students, protocols, activities, providers, voice, coding, privacy, manual, account })[tab]().catch(e => toast(errText(e)));
+  ({ dash, tokens, students, protocols, activities, providers, voice, coding, privacy, manual, account })[tab]().catch(e => toast(errText(e)));
+}
+
+// ───────────────────────── monitoraggio token
+async function tokens(q = {}) {
+  const d = await api('GET', '/api/psy/tokens?' + new URLSearchParams(q));
+  const count = v => Number(v || 0).toLocaleString('it-IT');
+  const sum = x => Number(x.tokens_in || 0) + Number(x.tokens_out || 0);
+  const names = {gemini:'Google Gemini',openai:'OpenAI',anthropic:'Claude',deepseek:'DeepSeek',openai_compatible:'OpenAI compatibile',demo:'Demo'};
+  const card = (title,x) => h('div',{class:'card'},h('div',{class:'small muted'},title),h('div',{class:'kpi'},count(sum(x)),h('small',{},'token in + out registrati')),h('p',{class:'small'},`${count(x.tokens_in)} ingresso · ${count(x.tokens_out)} uscita · ${count(x.calls)} chiamate · ${count(x.unknown_usage)} con dati incompleti`));
+  const form = h('form',{class:'card row',onsubmit:guard(async e=>{e.preventDefault();const f=e.target;await tokens({provider:f.provider.value,from:f.from.value,to:f.to.value});})},
+    field('Provider',sel(Object.entries(names),d.provider,{name:'provider'})),field('Dal (UTC)',h('input',{type:'date',name:'from',value:d.from,required:true})),field('Al (UTC)',h('input',{type:'date',name:'to',value:d.to,required:true})),h('button',{class:'primary',type:'submit'},'Aggiorna'));
+  const table=(headers,rows)=>h('div',{class:'scroll'},h('table',{},h('thead',{},h('tr',{},headers.map(x=>h('th',{},x)))),h('tbody',{},rows)));
+  clear(view).append(h('h1',{},'Consumi token'),h('p',{class:'small muted'},`Predefinito: ${d.default.label} · ${names[d.default.provider_key]} · ${d.default.model_name || 'modello demo'}. Dati del tuo spazio professionale, aggregati per tipo di provider, comprese configurazioni e modelli precedenti.`),form,
+    h('div',{class:'grid g3'},card('Oggi · UTC',d.today),card('Mese corrente · UTC',d.month),card('Totale registrato',d.lifetime)),
+    h('p',{class:'banner'},'Sono consumi registrati da ABLET, non il saldo del conto API né la quota residua del fornitore. Ingresso + uscita può escludere token aggiuntivi, per esempio di ragionamento o cache. Chiamate fallite, consumi non restituiti, tentativi HTTP interni e utilizzi esterni ad ABLET possono rendere il totale incompleto. Demo: consumo simulato, senza addebiti.'),
+    d.local_budget ? h('p',{class:'small'},`Tetto mensile locale della configurazione predefinita (${d.default.label}): ${count(d.local_budget.used)} / ${count(d.local_budget.limit)} token · margine ${count(d.local_budget.remaining)}. Si riferisce solo a questa configurazione, indipendentemente dal filtro; non è la quota del provider.`) : null,
+    h('h2',{},`Periodo ${d.from} – ${d.to}`),card('Consumo nel periodo',d.period),
+    h('p',{class:'small muted'},`Chiamate riuscite: ${count(d.period.successful)} · rinvii per attesa: ${count(d.period.cooldowns)} · chiamate di fallback: ${count(d.period.fallbacks)}. Prove, simulazioni e altre chiamate senza sessione: ${count(d.outside_sessions.calls)}, ${count(sum(d.outside_sessions))} token in + out (già inclusi nel totale).`),
+    d.days.length ? barChart({title:'Consumo giornaliero nel periodo (UTC)',labels:d.days.map(x=>x.day),series:[{name:'Ingresso',values:d.days.map(x=>+x.tokens_in)},{name:'Uscita',values:d.days.map(x=>+x.tokens_out)}],unit:'token'}) : h('p',{},'Nessuna chiamata registrata nel periodo per questo provider.'),
+    h('h2',{},'Ripartizione per modello'),table(['Modello','Chiamate','Ingresso','Uscita','Dati incompleti'],d.models.map(x=>h('tr',{},...[x.model_name || 'Demo / non disponibile',count(x.calls),count(x.tokens_in),count(x.tokens_out),count(x.unknown_usage)].map(v=>h('td',{},v))))),
+    h('h2',{},'Storico delle sessioni'),h('p',{class:'small muted'},'I valori si riferiscono alle chiamate del provider e del periodo selezionati, anche per sessioni ancora aperte. Apri una sessione per vedere le chiamate dei suoi diversi provider. Le cancellazioni previste dalla conservazione dei dati rimuovono anche il relativo storico.'),
+    table(['Sessione','Studente','Attività','Modelli','Ultima chiamata UTC','Chiamate','Ingresso','Uscita','Dati incompleti'],d.sessions.map(x=>h('tr',{},h('td',{},h('button',{onclick:guard(()=>session(+x.session_id))},`#${x.session_id}`)),...[alias(+x.student_id),x.activity,x.models || 'Demo / non disponibile',x.last_call,count(x.calls),count(x.tokens_in),count(x.tokens_out),count(x.unknown_usage)].map(v=>h('td',{},v))))),
+    !d.sessions.length ? h('p',{},'Nessuna sessione con chiamate nel periodo selezionato.') : null,
+    h('div',{class:'row'},h('button',{disabled:d.page<=1,onclick:guard(()=>tokens({...q,provider:d.provider,from:d.from,to:d.to,page:d.page-1}))},'← Precedenti'),h('span',{},`Pagina ${d.page} · ${count(d.session_count)} sessioni`),h('button',{disabled:d.page*25>=d.session_count,onclick:guard(()=>tokens({...q,provider:d.provider,from:d.from,to:d.to,page:d.page+1}))},'Successive →'),h('button',{onclick:()=>downloadJson(`ablet-token-${d.provider}-${d.from}-${d.to}.json`,d)},'Esporta pagina JSON')),
+    h('p',{class:'small muted'},`Aggiornato: ${d.generated_at}. Premi Aggiorna per rileggere i dati. Intervallo massimo: 366 giorni.`));
 }
 
 // ───────────────────────── panoramica

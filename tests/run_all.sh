@@ -6,6 +6,7 @@ php bin/migrate.php --fresh >/dev/null
 php database/seeds/demo.php --quiet
 php tests/run.php | tail -1
 php tests/free_activity.php | tail -1
+php tests/token_monitor.php | tail -1
 php bin/migrate.php --fresh >/dev/null
 php database/seeds/demo.php --quiet
 export PASSWORD_RESET_TEST_OUTBOX="$(mktemp "${TMPDIR:-/tmp}/ablet-reset-XXXXXX")"

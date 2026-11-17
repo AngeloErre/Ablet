@@ -3,9 +3,17 @@
 Piattaforma web in italiano per sostenere l'autoregolazione dell'apprendimento con un agente pedagogico conversazionale.
 Committente scientifico: Prof. Angelo Rega.
 
-**Stato: MVP con modalità Attività libera (aggiornamento 0.11.0).** Frontend HTML/CSS/JavaScript senza dipendenze, backend PHP, database MySQL/MariaDB.
+**Stato: MVP con modalità Attività libera (aggiornamento 0.12.0).** Frontend HTML/CSS/JavaScript senza dipendenze, backend PHP, database MySQL/MariaDB.
 
 > La riuscita tecnica dell'MVP non equivale alla sua validazione scientifica: soglie, livelli di supporto, codebook e lessico di polarità sono parametri progettuali da validare.
+
+## Versione 0.12.0 — monitoraggio token
+
+Nuova pagina **Consumi token** nell'area professionale. Si apre sul tipo di provider predefinito, aggregando le sue configurazioni e i modelli precedenti nello spazio dell'utente. Mostra oggi, mese e storico registrato; filtri provider/date UTC (massimo 366 giorni), andamento giornaliero, ripartizione per modello e storico sessioni paginato con apertura dei dettagli ed esportazione della pagina JSON.
+
+Sono somme dei token di ingresso/uscita disponibili nel registro esistente, non credito o quota residua del fornitore. Dati mancanti, ragionamento/cache non separati, tentativi interni e utilizzi esterni possono rendere il conteggio incompleto. Le chiamate senza sessione sono comprese e indicate separatamente. Il tetto mensile locale riguarda soltanto la configurazione predefinita. Nessuna chiamata API aggiuntiva per leggere il monitor.
+
+**Nessuna nuova migrazione:** riusa llm_calls. Le installazioni già alla 0.11.0 devono caricare i file conservando config.php, .env e storage/, quindi aprire refresh.php. Il database deve già includere le migrazioni fino alla 012. La cancellazione delle sessioni elimina anche i loro registri secondo le regole esistenti.
 
 ## Versione 0.11.0 — recupero password professionale
 

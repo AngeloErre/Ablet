@@ -72,12 +72,15 @@ final class PsyApi
         $r('DELETE', '/providers/{id}', 'providerDelete');
         $r('PUT', '/settings', 'settingsSave');
         $r('GET', '/dashboard', 'dashboard');
+        $r('GET', '/tokens', 'tokens');
         $r('GET', '/sessions/{id}', 'sessionGet');
         $r('POST', '/sessions/{id}/annotate', 'sessionAnnotate');
         $r('POST', '/sessions/{id}/rating', 'sessionRating');
         $r('POST', '/sessions/{id}/note', 'sessionNote');
         $r('POST', '/annotations/{id}/review', 'annotationReview');
     }
+
+    public static function tokens(): array { return \Ablet\Service\TokenMonitor::report(self::me(), $_GET); }
 
     // ───────────────────────── helper
     private static function me(): int { return App::user()['id']; }

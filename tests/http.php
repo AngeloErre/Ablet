@@ -522,6 +522,16 @@ $w = $psy->req('PUT', "/api/psy/students/{$ns['id']}/profile", ['age_band' => '1
 check('profilo funzionale con termine diagnostico → avviso', count($w['warnings']) === 1);
 $ex = $psy->req('GET', '/api/psy/students/' . $boot['students'][0]['id'] . '/export')[1];
 check('esportazione dei dati dello studente (pseudonimo, senza login)', count($ex['sessions']) >= 4 && !str_contains(json_encode($ex), 'STUDENTE-DEMO-A') && !str_contains(json_encode($ex), 'password'));
+group('Monitor token');
+$anonymousTokens = new Client($APP);
+check('monitor non accessibile senza login', $anonymousTokens->req('GET', '/api/psy/tokens')[0] === 401);
+check('monitor non accessibile allo studente', $sa->req('GET', '/api/psy/tokens')[0] === 403);
+[$tc,$td] = $psy->req('GET','/api/psy/tokens?provider=demo');
+check('monitor professionale disponibile', $tc === 200 && isset($td['lifetime'], $td['period'], $td['sessions']), $td);
+check('sessioni del monitor appartengono allo spazio', count(array_filter($td['sessions'] ?? [], static fn($x) => (int)$one('SELECT a.owner_id FROM sessions s JOIN activities a ON a.id=s.activity_id WHERE s.id=?', [$x['session_id']]) !== (int)$one("SELECT id FROM users WHERE login='demo.psicologo'"))) === 0);
+check('monitor respinge intervallo non valido', $psy->req('GET','/api/psy/tokens?from=2026-02-31')[0] === 422);
+check('monitor respinge provider non valido', $psy->req('GET','/api/psy/tokens?provider=invalid')[0] === 422);
+
 $before = (int)$one('SELECT COUNT(*) FROM messages');
 check('cancellazione dello studente e dei dati collegati', $psy->req('DELETE', '/api/psy/students/' . $boot['students'][0]['id'])[0] === 200
     && (int)$one('SELECT COUNT(*) FROM sessions WHERE student_id = ?', [$boot['students'][0]['id']]) === 0 && (int)$one('SELECT COUNT(*) FROM messages') < $before
