@@ -14,7 +14,10 @@ final class VoiceApi
         foreach (['speech','transcribe'] as $operation) App::route('POST','/api/voice/'.$operation,static fn()=>self::run($operation));
     }
     private static function run(string $operation): array {
-        $user=App::user(); $in=App::input();$owner=(int)$user['id']; $context=$in['context'] ?? [];
+        $user=App::user();
+        // Rotte condivise fra ruoli: dopo l'autenticazione liberare anche qui il lock PHP.
+        if (session_status() === PHP_SESSION_ACTIVE) session_write_close();
+        $in=App::input();$owner=(int)$user['id']; $context=$in['context'] ?? [];
         App::rateLimit('audio:'.$owner,30,300);
         $session=null;
         if ($user['role']==='student') {

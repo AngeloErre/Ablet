@@ -3,9 +3,15 @@
 Piattaforma web in italiano per sostenere l'autoregolazione dell'apprendimento con un agente pedagogico conversazionale.
 Committente scientifico: Prof. Angelo Rega.
 
-**Stato: MVP con modalità Attività libera (aggiornamento 0.8.6).** Frontend HTML/CSS/JavaScript senza dipendenze, backend PHP, database MySQL/MariaDB.
+**Stato: MVP con modalità Attività libera (aggiornamento 0.8.7).** Frontend HTML/CSS/JavaScript senza dipendenze, backend PHP, database MySQL/MariaDB.
 
 > La riuscita tecnica dell'MVP non equivale alla sua validazione scientifica: soglie, livelli di supporto, codebook e lessico di polarità sono parametri progettuali da validare.
+
+## Versione 0.8.7 — verifica prima del rilascio
+
+Correzioni: sessione PHP liberata anche durante audio server; richieste troppo grandi respinte con HTTP 413; elenco modelli con budget di 40 secondi; recupero in memoria della bozza del messaggio dopo errore di rete e riuso dell’identificatore per riprovare lo stesso invio; selezione dell’attività libera anche quando è la sessione corrente di un programma. La suite principale propaga ora correttamente i fallimenti dei comandi in pipeline.
+
+**575 controlli superati**. Stress locale: **652 richieste**, concorrenza fino a 12, area studente e professionista con 51 sessioni e oltre 1.000 messaggi. Duplicati, limiti e payload non validi verificati. Dettagli, misure e miglioramenti prioritari in [docs/VERIFICA_0.8.7.md](docs/VERIFICA_0.8.7.md). Nessuna nuova migrazione. Non equivale a un collaudo su Aruba, Gemini reale o dispositivi fisici.
 
 ## Versione 0.8.6 — accoglienza vocale dello studente
 

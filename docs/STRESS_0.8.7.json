@@ -1,0 +1,61 @@
+{
+  "checks": 15,
+  "requests": 652,
+  "load": [
+    {
+      "surface": "student",
+      "concurrency": 1,
+      "requests": 120,
+      "seconds": 0.808,
+      "requests_per_second": 148.56,
+      "p50_ms": 6.54,
+      "p95_ms": 10.75,
+      "max_ms": 14.2
+    },
+    {
+      "surface": "student",
+      "concurrency": 4,
+      "requests": 120,
+      "seconds": 0.567,
+      "requests_per_second": 211.8,
+      "p50_ms": 10.46,
+      "p95_ms": 22.79,
+      "max_ms": 28.8
+    },
+    {
+      "surface": "student",
+      "concurrency": 12,
+      "requests": 120,
+      "seconds": 0.464,
+      "requests_per_second": 258.68,
+      "p50_ms": 20.15,
+      "p95_ms": 45.67,
+      "max_ms": 56.65
+    },
+    {
+      "surface": "psychologist",
+      "concurrency": 4,
+      "requests": 120,
+      "seconds": 5.591,
+      "requests_per_second": 21.46,
+      "p50_ms": 127.54,
+      "p95_ms": 247.11,
+      "max_ms": 305.16
+    },
+    {
+      "surface": "psychologist",
+      "concurrency": 12,
+      "requests": 120,
+      "seconds": 4.039,
+      "requests_per_second": 29.71,
+      "p50_ms": 159.2,
+      "p95_ms": 401.54,
+      "max_ms": 591.58
+    }
+  ],
+  "limitations": [
+    "Server PHP locale con due worker, non hosting Aruba",
+    "Nessun provider reale e nessuna misura di capacità del servizio Gemini",
+    "Dataset sintetico: 51 sessioni aggiunte e oltre 1000 messaggi nella sessione analizzata; nessuna prova prolungata di durata"
+  ]
+}

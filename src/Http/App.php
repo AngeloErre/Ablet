@@ -97,7 +97,8 @@ final class App
     public static function input(): array
     {
         $limit = str_contains($_SERVER['REQUEST_URI'] ?? '', '/api/voice/') ? 6000000 : 600000;
-        $raw = file_get_contents('php://input', false, null, 0, $limit) ?: '';
+        $raw = file_get_contents('php://input', false, null, 0, $limit + 1) ?: '';
+        if (strlen($raw) > $limit) { throw new ApiError(413, 'richiesta_troppo_grande'); }
         if ($raw === '') { return []; }
         $d = json_decode($raw, true, 32);
         if (!is_array($d)) { throw new ApiError(400, 'json_non_valido'); }

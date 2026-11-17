@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # Esegue l'intera verifica su un database DEDICATO AI TEST (lo schema viene azzerato).
-set -e
+set -euo pipefail
 cd "$(dirname "$0")/.."
 php bin/migrate.php --fresh >/dev/null
 php database/seeds/demo.php --quiet
@@ -15,3 +15,9 @@ sleep 1
 APP=http://127.0.0.1:8101 MOCK=http://127.0.0.1:8102 php tests/http.php
 
 MOCK=http://127.0.0.1:8102 php tests/provider_reliability.php
+
+if [[ "${ABLET_STRESS:-0}" == "1" ]]; then
+  php bin/migrate.php --fresh >/dev/null
+  php database/seeds/demo.php --quiet
+  php tests/stress.php
+fi

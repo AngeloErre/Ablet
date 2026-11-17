@@ -663,6 +663,7 @@ final class PsyApi
 
     public static function providerModels(array $a): array
     {
+        \Ablet\Llm\Http::setBudget(40);
         try {
             return ['models' => Gateway::adapter(self::own('provider', (int)$a['id']))->listModels()];
         } catch (ProviderException $e) {

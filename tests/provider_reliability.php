@@ -73,6 +73,17 @@ try {
     verify('Stesso cookie: sessione accessibile mentre il provider risponde',isset($live['user']['role']) && $elapsed<1.5);
     do {curl_multi_exec($mh,$running);if($running)curl_multi_select($mh,0.1);}while($running);
     verify('Prova lenta termina con risposta JSON',is_array(json_decode(curl_multi_getcontent($slow),true)));
+    curl_multi_remove_handle($mh,$slow);curl_close($slow);curl_multi_close($mh);
+    // Anche le rotte audio, condivise tra studente e professionista, devono liberare il lock.
+    file_put_contents($log,'');
+    $slow=curl_init($app.'/api/voice/speech');
+    curl_setopt_array($slow,[CURLOPT_RETURNTRANSFER=>true,CURLOPT_COOKIEFILE=>$jar,CURLOPT_POSTFIELDS=>json_encode(['text'=>'Prova sintetica','preview'=>['engine'=>'server','provider_config_id'=>$id,'tts_model'=>'timeout-test']]),CURLOPT_HTTPHEADER=>['Content-Type: application/json','X-CSRF-Token: '.$login['csrf']],CURLOPT_TIMEOUT=>8]);
+    $mh=curl_multi_init();curl_multi_add_handle($mh,$slow);$start=microtime(true);$observed=false;
+    while(microtime(true)-$start<2){curl_multi_exec($mh,$running);clearstatcache(true,$log);if(str_ends_with((string)file_get_contents($log),"timeout-test\n")){$observed=true;break;}usleep(20000);}
+    verify('Chiamata audio lenta realmente avviata',$observed);
+    $start=microtime(true);$live=$req('/api/me');verify('Audio server non blocca lo stesso cookie',isset($live['user']['role'])&&microtime(true)-$start<1.5);
+    do{curl_multi_exec($mh,$running);if($running)curl_multi_select($mh,0.1);}while($running);
+    verify('Chiamata audio restituisce JSON',is_array(json_decode(curl_multi_getcontent($slow),true)));
     curl_multi_remove_handle($mh,$slow);curl_close($slow);curl_multi_close($mh);unlink($jar);
 } finally {
     $pdo->prepare('DELETE FROM llm_calls WHERE provider_config_id=?')->execute([$id]);

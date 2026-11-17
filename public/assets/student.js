@@ -19,6 +19,7 @@ const NOTICE = {
 
 let entryChoice=null, studyMode=null, homeData=null, runQueue=[], autoMicBlocked=false, listenEpoch=0, runEpoch=0;
 let root, ses = null, look = null, voice = null, av = null;
+let pendingRequest = null, messageDraft = null;
 let ui = 'idle';                 // idle | speaking | listening | confirm | thinking
 let lastLocal = '', lastProposal = 0, lastSpoken = 0, countdown = null, micBroken = false, noSpeech = 0, busy = false, tick = null;
 let stage = null;                // riferimenti agli elementi del palco
@@ -39,7 +40,7 @@ function icon(n, size = 34) {
 const K = () => { const k=(prefs.kid ||= {subs:true,sound:true}); if(k.auto == null)k.auto=true;return k; };
 const saveK = () => applyPrefs();
 
-export function mount(el) { root = el; entryChoice=null; studyMode=null; runQueue=[]; home(); }
+export function mount(el) { root = el; pendingRequest=null; messageDraft=null; entryChoice=null; studyMode=null; runQueue=[]; home(); }
 
 // ────────────────────────────────────────────── utilità
 const say = (text, opts = {}) => (K().sound && voice?.canSpeak) ? voice.speak(text, { ...opts, onError: message => {
@@ -72,7 +73,7 @@ function setVoice(cfg) {
 
 // L'accoglienza usa la voce configurata, senza chiamare l'LLM né avviare una sessione.
 function entryWelcome(kid, d, hello) {
-  const free = d.activities.some(a => a.mode === 'free' && a.available);
+  const free = d.activities.some(a => a.mode === 'free' && a.available) || (d.programs || []).some(p => p.status === 'active' && p.steps.some(s => s.current && s.available && s.activity_mode === 'free'));
   const assigned = (d.programs || []).some(p => p.status === 'active') || d.activities.some(a => a.mode !== 'free' && a.available);
   const question = `${hello} Vuoi scegliere un’attività libera oppure seguire il programma che ti è stato assegnato?`;
   const status = h('p', {class:'small', role:'status', 'aria-live':'polite'}, 'Puoi rispondere a voce oppure toccare una scelta.');
@@ -168,7 +169,7 @@ async function home() {
       h('div', { class: 'khello' }, av.el, h('div', {}, h('h1', {}, hello), h('p', {}, studyMode==='sequence'?'Modalità sequenza: scegli da dove iniziare.':'Modalità: un’attività alla volta.'),h('button',{class:'kchip',onclick:()=>{entryChoice=null;studyMode=null;runQueue=[];home();}},'Cambia scelta'),
         playButton({ class: 'kicon', onclick: () => { voice.unlock(); av.setState('speaking'); say(hello + ' Tocca un compito per iniziare.', { onEnd: () => av.setState('idle') }); } }, '🔊 Ascolta'))),
       entryChoice==='assigned'?h('button',{class:'kchip',onclick:sequenceSheet},'Qual è la sequenza delle attività?'):null,
-      (entryChoice==='assigned' ? d.programs || [] : []).filter(p=>p.status==='active').slice(0,1).map(p=>{const step=p.steps.find(s=>s.current);return step?h('section',{class:'card'},h('h2',{},'La tua attività'),h('h3',{},step.activity),h('button',{class:'kchip go',disabled:!step.available,onclick:()=>{prepareQueue({step:step.id});startActivity({id:step.activity_id},null,step.id);}},step.available?'Inizia o riprendi':'Chiedi al tuo professionista')):null;}),
+      (d.programs || []).filter(p=>p.status==='active' && (entryChoice==='assigned' || p.steps.some(s=>s.current && s.available && s.activity_mode==='free'))).slice(0,1).map(p=>{const step=p.steps.find(s=>s.current);return step?h('section',{class:'card'},h('h2',{},'La tua attività'),h('h3',{},step.activity),h('button',{class:'kchip go',disabled:!step.available,onclick:()=>{prepareQueue({step:step.id});startActivity({id:step.activity_id},null,step.id);}},step.available?'Inizia o riprendi':'Chiedi al tuo professionista')):null;}),
       (entryChoice==='assigned'?open:[]).filter(s=>!d.activities.some(a=>+a.id===+s.activity_id)&&!(d.programs||[]).some(p=>p.status!=='cancelled'&&p.steps.some(step=>step.session_public_id===s.public_id))).map(s=>h('button',{class:'kchip',onclick:()=>startActivity({id:s.activity_id},s)},`Riprendi sessione precedente: ${s.title}`)),
       h('div', { class: 'ktiles' }, (entryChoice==='free'?d.activities.filter(a=>a.mode==='free'):((d.programs||[]).some(p=>p.status==='active')?[]:d.activities.filter(a=>a.mode!=='free').slice(0,1))).map(a => a.mode !== 'free' ? tile(a) : h('section', {}, tile(a),
         open.filter(s => s.activity_id === a.id).map(s => h('button', { class: 'kchip', onclick: () => startActivity(a, s) }, `Riprendi: ${s.title}`)),
@@ -263,8 +264,13 @@ addEventListener('online', () => { if (stage) toast('La connessione è tornata.'
 async function send(kind, body) {
   if (busy) return false;
   busy = true; setUi('thinking');
+  const requestKey = JSON.stringify([ses.id, kind, body]);
+  if (pendingRequest?.key !== requestKey) pendingRequest = {key:requestKey, cid:uuid()};
+  const clientEventId = pendingRequest.cid;
   try {
-    const r = await api('POST', `/api/student/sessions/${ses.id}/${kind}`, { ...body, client_event_id: uuid() });
+    const r = await api('POST', `/api/student/sessions/${ses.id}/${kind}`, { ...body, client_event_id: clientEventId });
+    pendingRequest = null;
+    if (kind === 'message') messageDraft = null;
     ses = r.session;
     if (r.notice && NOTICE[r.notice]) {
       if (r.notice.startsWith('provider_')) autoMicBlocked = true;
@@ -274,6 +280,8 @@ async function send(kind, body) {
     afterTurn();
     return true;
   } catch (e) {
+    if (kind === 'message') messageDraft = {sid:ses.id,text:body.text};
+    if (e.status && e.status < 500) pendingRequest = null;
     busy = false; setUi('idle'); update();
     const msg = errText(e); toast(msg); say(msg);
     return false;
@@ -623,7 +631,7 @@ function sheet(title, body, onClose) {
 function keysSheet(initial, onFinal) {
   stopAll();
   const ta = h('textarea', { 'aria-label': 'Scrivi qui', maxlength: 2000, placeholder: 'Scrivi qui…' });
-  ta.value = initial;
+  ta.value = initial || (!onFinal && messageDraft?.sid === ses.id ? messageDraft.text : '');
   const submit = () => { const t = ta.value.trim(); if (!t) return; close();
     if (onFinal) return onFinal(t);
     const cmd = intent(t);
