@@ -520,8 +520,8 @@
     "default": "Per creare l’account vengono salvati nome, e-mail usata come codice di accesso, password in forma di hash, professione dichiarata e gli eventuali dati di presentazione. Il profilo non è un elenco pubblico e non è inviato al modello linguistico per il dialogo dello studente."
   },
   {
-    "key": "t_67b170d4_302",
-    "default": "L’e-mail non viene verificata e non viene inviata una conferma automatica: conserva le credenziali. Gli account studente vengono creati dal professionista. Per il trattamento dei dati degli studenti il professionista deve configurare le autorizzazioni e le condizioni applicabili alla propria attività."
+    "key": "t_1fa389b2_383",
+    "default": "L’e-mail non viene verificata e non viene inviata una conferma automatica: conserva le credenziali. Il recupero password via e-mail richiede l’attivazione da parte del super admin. Gli account studente vengono creati dal professionista. Per il trattamento dei dati degli studenti il professionista deve configurare le autorizzazioni e le condizioni applicabili alla propria attività."
   },
   {
     "key": "t_c9b04a2a_33",

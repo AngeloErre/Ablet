@@ -9,8 +9,8 @@ class Element {
 const all=e=>[e,...e.children.flatMap(all)];
 const text=e=>e.text+e.children.map(text).join('');
 let source=fs.readFileSync(path.join(__dirname,'../public/assets/app.js'),'utf8').replace(/^export /mg,'').replace(/^boot\(\)\.catch.*$/m,'');
-function render(search){const root=new Element('div'),html=new Element('html');html.dataset={base:'/ablet'};
- const ctx=vm.createContext({document:{documentElement:html,getElementById:()=>root,createElement:tag=>new Element(tag),createTextNode:value=>new Element('#text',String(value))},location:{search},URLSearchParams,localStorage:{getItem:()=>null,setItem(){}},window:{},navigator:{},addEventListener(){},setTimeout,clearTimeout,console});
+function render(search,hash=''){const root=new Element('div'),html=new Element('html');html.dataset={base:'/ablet'};
+ const ctx=vm.createContext({document:{documentElement:html,getElementById:()=>root,createElement:tag=>new Element(tag),createTextNode:value=>new Element('#text',String(value))},location:{search,hash,pathname:'/ablet/'},URLSearchParams,localStorage:{getItem:()=>null,setItem(){}},window:{},navigator:{},addEventListener(){},setTimeout,clearTimeout,console});
  vm.runInContext(source,ctx);ctx.login();return all(root);
 }
 const home=render('');const links=home.filter(e=>e.tag==='a');
@@ -33,4 +33,8 @@ check('Registrazione richiede conferma delle informazioni',signup.some(e=>e.tag=
 check('Homepage spiega dashboard e limiti dei dati',home.some(e=>e.attrs.id==='dashboard')&&home.some(e=>e.attrs.id==='analisi-dati'));
 check('Due anteprime isolate con dati sintetici',home.filter(e=>e.tag==='iframe'&&e.attrs.sandbox==='').length===2);
 check('Il menu collega alla dashboard',links.some(e=>e.attrs.href==='#dashboard'));
+check('Accesso professionale offre recupero password',render('?accesso=docente').some(e=>e.tag==='a'&&e.attrs.href==='/ablet/?recupero=password'));
+check('Accesso studente mantiene il recupero gestito dal professionista',!render('?accesso=studente').some(e=>e.tag==='a'&&e.attrs.href==='/ablet/?recupero=password'));
+const forgot=render('?recupero=password');check('Richiesta recupero usa campo e-mail',forgot.some(e=>e.tag==='input'&&e.attrs.type==='email'));
+const reset=render('?recupero=password','#token='+ 'a'.repeat(64));check('Link recupero apre la scelta della nuova password',reset.filter(e=>e.tag==='input'&&e.attrs.type==='password').length===2);
 console.log(`Superati: ${pass}`);

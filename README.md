@@ -3,9 +3,19 @@
 Piattaforma web in italiano per sostenere l'autoregolazione dell'apprendimento con un agente pedagogico conversazionale.
 Committente scientifico: Prof. Angelo Rega.
 
-**Stato: MVP con modalità Attività libera (aggiornamento 0.10.1).** Frontend HTML/CSS/JavaScript senza dipendenze, backend PHP, database MySQL/MariaDB.
+**Stato: MVP con modalità Attività libera (aggiornamento 0.11.0).** Frontend HTML/CSS/JavaScript senza dipendenze, backend PHP, database MySQL/MariaDB.
 
 > La riuscita tecnica dell'MVP non equivale alla sua validazione scientifica: soglie, livelli di supporto, codebook e lessico di polarità sono parametri progettuali da validare.
+
+## Versione 0.11.0 — recupero password professionale
+
+«Password dimenticata?» negli accessi professionista e super admin: e-mail con link monouso valido 30 minuti, nuova password e revoca delle sessioni precedenti. Disponibile per account attivi il cui codice di accesso è un indirizzo e-mail. Gli account con altri codici continuano a usare il reset del super admin.
+
+**Database obbligatorio:** applicare **012_password_recovery.sql** con install.php → Aggiorna database. Conservare config.php, .env e storage/, eliminare nuovamente public/install.php e aprire refresh.php.
+
+**Attivazione:** Super admin → **Posta e recupero** → mittente reale del dominio, URL pubblico HTTPS (per questa installazione `https://www.angelorega.net/ablet`), abilita e salva. Inviare una prova e verificare la ricezione anche nello spam. L'invio usa PHP `mail()`; l'accettazione del server non garantisce la consegna. Nessun messaggio reale è stato inviato durante i test automatici.
+
+Guida completa: [docs/PASSWORD_RECOVERY.md](docs/PASSWORD_RECOVERY.md). Verificati 35 controlli specifici, concorrenza, aggiornamenti da database precedenti e regressioni delle API.
 
 ## Versione 0.10.1 — restyling UI dell’area professionale
 

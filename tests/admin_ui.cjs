@@ -18,5 +18,8 @@ const all=e=>[e,...e.children.flatMap(all)],text=e=>e.nodeType===3?e.nodeValue:e
  ctx.api=async()=>({content});const node=new E('#text','Titolo prova'),container=new E('div');container.append(node);await ctx.hydrateHome(container);
  ck('CMS applica testo semplice senza creare elementi HTML',node.nodeValue==='<script>non eseguire</script>'&&container.children.length===1);
  const defaults=JSON.parse(fs.readFileSync(path.join(__dirname,'../resources/home-content.json')));ck('Catalogo copre i testi pubblici con chiavi univoche',defaults.length>100&&new Set(defaults.map(x=>x.key)).size===defaults.length);
+ ctx.api=async()=>({config:{enabled:false,from:'',public_url:''},available:false});await ctx.mailSettings(root);
+ ck('Posta e recupero configurabili dall’area admin',text(root).includes('Posta e recupero password')&&text(root).includes('URL pubblico esatto'));
+ ck('Prova e-mail distinta dal recupero',text(root).includes('Invia e-mail di prova')&&text(root).includes('senza password o link'));
  console.log('Admin UI: '+n+' controlli superati.');
 })().catch(e=>{console.error(e);process.exit(1);});

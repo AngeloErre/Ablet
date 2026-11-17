@@ -16,7 +16,7 @@ L’e-mail diventa il codice di accesso. Al termine l’utente entra nel proprio
 
 Da Impostazioni applicazione → Il mio profilo si modificano nome, professione, organizzazione e presentazione. Il profilo è privato, non è una directory pubblica e non è incluso nel prompt della conversazione con lo studente. L’accesso al profilo usa l’identità della sessione, non un identificatore scelto dal client.
 
-L’e-mail e la qualifica non sono verificate automaticamente. Non vengono inviate e-mail e non è presente un recupero password via e-mail: l’interfaccia lo dichiara. Per il lancio pubblico il titolare dell’installazione deve predisporre la propria informativa con contatti e condizioni applicabili; il testo tecnico sull’account non la sostituisce. La registrazione non include credito dei provider AI.
+L’e-mail e la qualifica non sono verificate automaticamente. La registrazione non invia una conferma automatica. Dalla 0.11.0 è disponibile il recupero password tramite link e-mail, previa configurazione in Super admin → Posta e recupero. Il codice di accesso deve essere un indirizzo e-mail valido. Per il lancio pubblico il titolare dell’installazione deve predisporre la propria informativa con contatti e condizioni applicabili; il testo tecnico sull’account non la sostituisce. La registrazione non include credito dei provider AI.
 
 ## Protezioni e configurazione
 

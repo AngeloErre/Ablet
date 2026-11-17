@@ -32,6 +32,7 @@ const ERR = {
   non_autenticato: 'La sessione è scaduta: accedi di nuovo.', credenziali_non_valide: 'Codice o password non corretti.', troppe_richieste: 'Troppe richieste ravvicinate: riprova fra qualche minuto.',
   profilo_non_valido: 'Controlla nome, professione e lunghezza dei campi.', email_non_valida:'Inserisci un indirizzo e-mail valido.', password_non_valida:'Usa almeno 12 caratteri e una password non eccessivamente lunga.', account_gia_presente:'Questo codice di accesso è già utilizzato. Accedi con il tuo account.', registrazione_disabilitata:'La registrazione non è attiva in questa installazione.', conferma_informazioni_account:'Conferma di aver letto le informazioni sull’account.',
   chiave_installazione_non_valida:'Chiave di installazione non corretta.', super_admin_gia_presente:'Esiste già un super admin. Usa il suo accesso dedicato.', contenuto_modificato_ricarica:'La bozza è stata modificata da un’altra richiesta. Ricarica prima di salvare.', formato_immagine_non_valido:'Usa un PNG, JPEG o WebP fino a 4096 pixel per lato e 10 milioni di pixel totali.', immagine_non_valida:'Controlla il file, il limite di 2 MB e il testo alternativo.', testo_non_valido:'Uno dei testi non è valido o supera il limite.',
+  recupero_email_non_configurato:'Il recupero via e-mail non è ancora attivo. Contatta il super admin.', link_recupero_non_valido:'Il collegamento non è valido, è scaduto oppure è già stato usato. Richiedine uno nuovo.', configurazione_posta_non_valida:'Controlla mittente e URL pubblico: serve l’indirizzo HTTPS completo dell’installazione, senza query o credenziali.',
   non_autorizzato: 'Operazione non consentita.', non_trovato: 'Elemento non trovato.', errore_interno: 'Si è verificato un errore. Il lavoro svolto finora è salvato.',
   nessun_protocollo_assegnato: 'Per questa attività non è ancora stato assegnato un protocollo.', autorizzazioni_mancanti: 'Prima di iniziare devono essere registrate alcune autorizzazioni: chiedi al tuo psicologo.', sessione_occupata: 'Sto ancora elaborando la richiesta precedente.',
   tempo_non_valido: 'Indica un numero intero di minuti tra 1 e 600.', tempo_micro_obiettivo_non_valido: 'Puoi impostare da 1 a 600 minuti per passo durante la pianificazione.',
@@ -94,6 +95,7 @@ function login() {
   const portal = new URLSearchParams(location.search).get('accesso');
   const role = portal === 'studente' ? 'student' : portal === 'docente' ? 'psychologist' : portal === 'admin' ? 'admin' : null;
   const studentLink = `${BASE}/?accesso=studente`, teacherLink = `${BASE}/?accesso=docente`;
+  if (new URLSearchParams(location.search).get('recupero')==='password') { passwordRecovery(); return; }
   if (new URLSearchParams(location.search).get('registrazione') === 'professionista') { registration(); return; }
   if (!role) { publicHome(); return; }
   const err = h('p', { class: 'small', role: 'alert' });
@@ -105,7 +107,7 @@ function login() {
     h('p', { class: 'muted' }, 'Uno spazio per organizzare lo studio, un passo alla volta.'),
     h('label', { for: 'login' }, role === 'student' ? 'Codice di accesso' : 'Codice di accesso o e-mail'), h('input', { id: 'login', name: 'login', autocomplete: 'username', required: true, autocapitalize: 'none' }),
     h('label', { for: 'password' }, 'Password'), h('input', { id: 'password', name: 'password', type: 'password', autocomplete: 'current-password', required: true }),
-    err, role === 'psychologist' ? h('p', {}, h('a', {href:`${BASE}/?registrazione=professionista`},'Nuovo account? Crea il tuo profilo')) : null, h('p', {}, h('a', { href: `${BASE}/` }, '← Scegli un altro accesso')), h('div', { class: 'row' }, h('button', { class: 'primary', type: 'submit' }, 'Accedi')),
+    err, role !== 'student' ? h('p',{},h('a',{href:`${BASE}/?recupero=password`},'Password dimenticata?')) : null, role === 'psychologist' ? h('p', {}, h('a', {href:`${BASE}/?registrazione=professionista`},'Nuovo account? Crea il tuo profilo')) : null, h('p', {}, h('a', { href: `${BASE}/` }, '← Scegli un altro accesso')), h('div', { class: 'row' }, h('button', { class: 'primary', type: 'submit' }, 'Accedi')),
     h('p', { class: 'small muted' }, 'ABLET usa un sistema di intelligenza artificiale di supporto allo studio. Non è una persona e non sostituisce insegnanti o psicologi.'));
   clear(root).append(h('main', { class: 'login', id: 'main' }, f));
 }
@@ -115,6 +117,7 @@ export async function logout() { dispatchEvent(new Event('ablet:voice-stop')); c
 export async function boot() {
   if(!root)return; // Le pagine diagnostiche importano gli strumenti senza avviare l’app.
   if (!S.csrf || !S.user) { const me = await api('GET', '/api/me'); S.csrf = me.csrf; S.user = me.user; }
+  if(new URLSearchParams(location.search).get('recupero')==='password') return passwordRecovery();
   if (!S.user) return login();
   if(S.user.role==='admin' && new URLSearchParams(location.search).get('preview_home')==='1') return publicHome();
   const main = h('main', { id: 'main', class: 'wrap', tabindex: '-1' });
@@ -190,7 +193,7 @@ function publicHome() {
       ].map(([q,a])=>h('details',{class:'site-faq'},h('summary',{},q),h('p',{},a)))),
     section('account-data','INFORMAZIONI SULL’ACCOUNT','Uno spazio professionale, con dati separati.',
       'Per creare l’account vengono salvati nome, e-mail usata come codice di accesso, password in forma di hash, professione dichiarata e gli eventuali dati di presentazione. Il profilo non è un elenco pubblico e non è inviato al modello linguistico per il dialogo dello studente.',
-      h('p',{},'L’e-mail non viene verificata e non viene inviata una conferma automatica: conserva le credenziali. Gli account studente vengono creati dal professionista. Per il trattamento dei dati degli studenti il professionista deve configurare le autorizzazioni e le condizioni applicabili alla propria attività.'),
+      h('p',{},'L’e-mail non viene verificata e non viene inviata una conferma automatica: conserva le credenziali. Il recupero password via e-mail richiede l’attivazione da parte del super admin. Gli account studente vengono creati dal professionista. Per il trattamento dei dati degli studenti il professionista deve configurare le autorizzazioni e le condizioni applicabili alla propria attività.'),
       h('details',{},h('summary',{},'Riferimenti del modello educativo'),h('p',{},'Zimmerman, B. J. (2002). Becoming a Self-Regulated Learner: An Overview. Theory Into Practice, 41(2), 64–70. Il modello orienta il progetto; la sua citazione non costituisce una validazione di ABLET.'),h('a',{href:'https://doi.org/10.1207/s15430421tip4102_2',target:'_blank',rel:'noopener'},'Leggi il riferimento scientifico')))),
     h('footer',{class:'site-footer'},h('div',{},h('strong',{},'ABLET'),h('p',{},'Adaptive Based Learning Enhancer Tool'),h('p',{},'Progetto scientifico: Prof. Angelo Rega.')),
       h('div',{},h('a',{href:student},'Accesso studente'),h('a',{href:professional},'Accesso educatore / psicologo'),h('a',{href:register},'Crea profilo'),h('a',{href:'#account-data'},'Informazioni sull’account'),h('a',{href:`${BASE}/?accesso=admin`},'Super admin')))));
@@ -228,4 +231,25 @@ async function hydrateHome(container) {
       if(figure && item && /^[a-f0-9]{64}$/.test(item.id))figure.replaceChildren(h('img',{src:`${BASE}/api/site/media/${item.id}`,alt:item.alt||'',loading:'lazy',class:'site-managed-image'}),h('figcaption',{},item.caption||''));
     }
   } catch { /* I contenuti originali restano leggibili se il servizio editoriale non è disponibile. */ }
+}
+
+let passwordRecoveryToken=null;
+function passwordRecovery() {
+  const params=new URLSearchParams(location.hash?.slice(1)||''),token=params.get('token')||passwordRecoveryToken;
+  passwordRecoveryToken=token;
+  if(token && window.history?.replaceState)window.history.replaceState(null,'',(location.pathname||`${BASE}/`)+location.search);
+  const status=h('p',{role:'status','aria-live':'polite'}),button=h('button',{type:'submit',class:'primary'},token?'Salva nuova password':'Invia link di recupero');
+  const email=h('input',{type:'email',required:true,maxlength:190,autocomplete:'username','aria-label':'E-mail del tuo account'});
+  const password=h('input',{type:'password',required:true,minlength:12,maxlength:72,autocomplete:'new-password','aria-label':'Nuova password'}),repeat=h('input',{type:'password',required:true,minlength:12,maxlength:72,autocomplete:'new-password','aria-label':'Conferma nuova password'});
+  const form=h('form',{class:'card',onsubmit:async e=>{e.preventDefault();status.textContent='';if(token && password.value!==repeat.value){status.textContent='Le password non coincidono.';return;}button.disabled=true;
+    try{
+      if(token){await api('POST','/api/password-reset/confirm',{token,password:password.value});passwordRecoveryToken=null;password.value='';repeat.value='';status.replaceChildren(h('strong',{},'Password aggiornata. Gli accessi precedenti sono stati revocati.'),h('p',{},h('a',{href:`${BASE}/?accesso=docente`},'Accedi con la nuova password')),h('p',{},h('a',{href:`${BASE}/?accesso=admin`},'Accesso super admin')));button.classList.add('hidden');}
+      else {const r=await api('POST','/api/password-reset/request',{email:email.value});status.textContent=r.message;button.disabled=false;}
+    }catch(x){status.replaceChildren(h('span',{},errText(x)),token?h('p',{},h('a',{href:`${BASE}/?recupero=password`},'Richiedi un nuovo collegamento')):null);button.disabled=false;}
+  }},h('div',{class:'brand'},'ABLET'),h('h1',{},token?'Scegli una nuova password':'Hai dimenticato la password?'),
+    h('p',{},token?'Il link è valido per 30 minuti e può essere usato una sola volta. Usa almeno 12 caratteri.':'Inserisci l’e-mail utilizzata come codice di accesso professionale. Se usi un codice diverso da un’e-mail, contatta il super admin.'),
+    token?h('div',{},h('label',{},'Nuova password',password),h('label',{},'Conferma password',repeat)):h('label',{},'E-mail del tuo account',email),status,button,
+    h('p',{},h('a',{href:`${BASE}/?accesso=docente`},'← Torna all’accesso')));
+  clear(root).append(h('main',{id:'main',class:'login'},form));
+  if(!token)api('GET','/api/password-reset/status').then(r=>{if(!r.available){button.disabled=true;status.textContent='Il recupero via e-mail non è ancora attivo. Contatta il super admin.';}}).catch(()=>{status.textContent='Il servizio non è disponibile adesso. Puoi contattare il super admin.';});
 }

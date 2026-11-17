@@ -43,4 +43,5 @@ StudentApi::register();
 \Ablet\Http\VoiceApi::register();
 PsyApi::register();
 \Ablet\Http\AdminApi::register();
+\Ablet\Http\PasswordApi::register();
 App::run();
