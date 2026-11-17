@@ -30,6 +30,7 @@ const ERR = {
   autorizzazione_audio_provider_mancante: 'Manca l’autorizzazione dedicata all’invio audio: chiedi al professionista di registrarla.', voce_server_non_configurata: 'Configura il motore vocale server in Voce e avatar.', scegli_provider_audio: 'Scegli un provider per l’audio.', prompt_troppo_lungo: 'Il prompt supera il limite configurato: riduci il materiale o usa la modalità economica.',
   accesso_non_corrispondente: 'Le credenziali appartengono all’altra area. Torna alla scelta dell’accesso e seleziona quella corretta.',
   non_autenticato: 'La sessione è scaduta: accedi di nuovo.', credenziali_non_valide: 'Codice o password non corretti.', troppe_richieste: 'Troppe richieste ravvicinate: riprova fra qualche minuto.',
+  profilo_non_valido: 'Controlla nome, professione e lunghezza dei campi.', email_non_valida:'Inserisci un indirizzo e-mail valido.', password_non_valida:'Usa almeno 12 caratteri e una password non eccessivamente lunga.', account_gia_presente:'Questo codice di accesso è già utilizzato. Accedi con il tuo account.', registrazione_disabilitata:'La registrazione non è attiva in questa installazione.', conferma_informazioni_account:'Conferma di aver letto le informazioni sull’account.',
   non_autorizzato: 'Operazione non consentita.', non_trovato: 'Elemento non trovato.', errore_interno: 'Si è verificato un errore. Il lavoro svolto finora è salvato.',
   nessun_protocollo_assegnato: 'Per questa attività non è ancora stato assegnato un protocollo.', autorizzazioni_mancanti: 'Prima di iniziare devono essere registrate alcune autorizzazioni: chiedi al tuo psicologo.', sessione_occupata: 'Sto ancora elaborando la richiesta precedente.',
   tempo_non_valido: 'Indica un numero intero di minuti tra 1 e 600.', tempo_micro_obiettivo_non_valido: 'Puoi impostare da 1 a 600 minuti per passo durante la pianificazione.',
@@ -92,15 +93,8 @@ function login() {
   const portal = new URLSearchParams(location.search).get('accesso');
   const role = portal === 'studente' ? 'student' : portal === 'docente' ? 'psychologist' : null;
   const studentLink = `${BASE}/?accesso=studente`, teacherLink = `${BASE}/?accesso=docente`;
-  if (!role) {
-    clear(root).append(h('main', { class: 'login', id: 'main' }, h('section', { class: 'card' },
-      h('h1', {}, 'Benvenuto in ABLET'), h('p', {}, 'Scegli il tuo accesso.'),
-      h('div', { class: 'access-links' },
-        h('a', { class: 'access-card', href: studentLink }, h('strong', {}, 'Accedi come studente'), h('span', {}, 'Organizza il tuo studio e riprendi le attività.')),
-        h('a', { class: 'access-card', href: teacherLink }, h('strong', {}, 'Accedi come docente / psicologo'), h('span', {}, 'Configura i protocolli e segui gli studenti.'))),
-      h('p', { class: 'small muted' }, 'Usa le credenziali già assegnate al tuo account.'))));
-    return;
-  }
+  if (new URLSearchParams(location.search).get('registrazione') === 'professionista') { registration(); return; }
+  if (!role) { publicHome(); return; }
   const err = h('p', { class: 'small', role: 'alert' });
   const f = h('form', { class: 'card', onsubmit: async (e) => {
     e.preventDefault(); err.textContent = '';
@@ -108,9 +102,9 @@ function login() {
   } },
     h('div', { class: 'brand' }, h('i', { 'aria-hidden': 'true' })), h('h1', {}, role === 'student' ? 'Accesso studente' : 'Accesso docente / psicologo'),
     h('p', { class: 'muted' }, 'Uno spazio per organizzare lo studio, un passo alla volta.'),
-    h('label', { for: 'login' }, 'Codice di accesso'), h('input', { id: 'login', name: 'login', autocomplete: 'username', required: true, autocapitalize: 'none' }),
+    h('label', { for: 'login' }, role === 'student' ? 'Codice di accesso' : 'Codice di accesso o e-mail'), h('input', { id: 'login', name: 'login', autocomplete: 'username', required: true, autocapitalize: 'none' }),
     h('label', { for: 'password' }, 'Password'), h('input', { id: 'password', name: 'password', type: 'password', autocomplete: 'current-password', required: true }),
-    err, h('p', {}, h('a', { href: `${BASE}/` }, '← Scegli un altro accesso')), h('div', { class: 'row' }, h('button', { class: 'primary', type: 'submit' }, 'Accedi')),
+    err, role === 'psychologist' ? h('p', {}, h('a', {href:`${BASE}/?registrazione=professionista`},'Nuovo account? Crea il tuo profilo')) : null, h('p', {}, h('a', { href: `${BASE}/` }, '← Scegli un altro accesso')), h('div', { class: 'row' }, h('button', { class: 'primary', type: 'submit' }, 'Accedi')),
     h('p', { class: 'small muted' }, 'ABLET usa un sistema di intelligenza artificiale di supporto allo studio. Non è una persona e non sostituisce insegnanti o psicologi.'));
   clear(root).append(h('main', { class: 'login', id: 'main' }, f));
 }
@@ -137,3 +131,73 @@ if (root && 'serviceWorker' in navigator && window.isSecureContext) {
   addEventListener('load', () => navigator.serviceWorker.register(`${BASE}/sw.js`, { scope: `${BASE}/`, updateViaCache: 'none' }).catch(() => {}));
 }
 boot().catch(() => { clear(root).append(h('p', { class: 'pad' }, 'Il servizio non è raggiungibile. Riprova fra poco.')); });
+
+function publicHome() {
+  const student=`${BASE}/?accesso=studente`,professional=`${BASE}/?accesso=docente`,register=`${BASE}/?registrazione=professionista`;
+  const link=(label,href,style='')=>h('a',{href,class:'site-button '+style},label);
+  const card=(n,title,text)=>h('article',{class:'site-card'},h('span',{class:'site-number'},n),h('h3',{},title),h('p',{},text));
+  const section=(id,eyebrow,title,intro,...children)=>h('section',{id,class:'site-section'},h('div',{class:'site-section-head'},h('p',{class:'site-eyebrow'},eyebrow),h('h2',{},title),h('p',{},intro)),...children);
+  const phasePreview=h('div',{class:'site-preview', 'aria-label':'Anteprima illustrativa di una sessione di studio'},
+    h('div',{class:'site-preview-top'},h('strong',{},'ABLET'),h('span',{},'Prepariamo il piano')),
+    h('div',{class:'site-face','aria-hidden':'true'},'◕‿◕'),h('p',{class:'site-bubble'},'Qual è il primo piccolo passo che puoi fare da solo?'),
+    h('div',{class:'site-mini-plan'},h('span',{},'IL MIO OBIETTIVO'),h('strong',{},'Capire un testo e raccontarlo con parole mie'),h('div',{class:'site-step'},'01  Leggo un paragrafo'),h('div',{class:'site-step'},'02  Individuo le idee principali')),
+    h('div',{class:'site-preview-controls'},h('span',{},'Pausa'),h('span',{class:'site-mic'},'●  Parla'),h('span',{},'Riascolta'))),phaseFigure=h('figure',{},phasePreview,h('figcaption',{},'Anteprima illustrativa con contenuti sintetici.'));
+  clear(root).append(h('div',{class:'public-site'},
+    h('header',{class:'site-header'},h('a',{class:'site-brand',href:`${BASE}/`},h('span',{'aria-hidden':'true'},'a'), 'ABLET'),
+      h('nav',{'aria-label':'Scopri ABLET',class:'site-nav'},h('a',{href:'#approccio'},'L’approccio'),h('a',{href:'#strumenti'},'Come funziona'),h('a',{href:'#domande'},'Domande')),
+      h('div',{class:'site-access'},link('Accedi come studente',student),link('Accedi come educatore / psicologo',professional,'outline'))),
+    h('main',{id:'main'},h('section',{class:'site-hero'},h('div',{},h('p',{class:'site-eyebrow'},'TECNOLOGIE PER L’APPRENDIMENTO · AUTOREGOLAZIONE'),h('h1',{},'Imparare a guidare',h('br'),h('em',{},'il proprio studio.')),
+      h('p',{class:'site-lead'},'Un agente pedagogico che accompagna lo studente a pianificare, monitorare e ripensare il proprio modo di imparare. Con la regia di educatori e psicologi.'),
+      h('div',{class:'site-actions'},link('Crea il tuo profilo professionale',register,'solid'),link('Esplora l’approccio','#approccio','outline')),
+      h('p',{class:'site-footnote'},'Dialogo a voce o per iscritto. Attività libere e percorsi assegnati. Un passo alla volta.')),phaseFigure),
+    h('div',{class:'site-principles'},h('span',{},'Una domanda che orienta'),h('span',{},'Un obiettivo comprensibile'),h('span',{},'Una strategia da sperimentare'),h('span',{},'Una riflessione per ripartire')),
+    section('approccio','IL FONDAMENTO PSICOLOGICO','Dallo svolgere un compito al comprendere come si impara.',
+      'ABLET è progettato attorno al Self-Regulated Learning: un processo ciclico in cui lo studente partecipa attivamente alla definizione degli obiettivi, al controllo del lavoro e alla valutazione delle proprie strategie.',
+      h('div',{class:'site-grid three'},card('01','Previsione e pianificazione','Che cosa devo fare? Quale risultato voglio raggiungere? Lo studente analizza il compito, sceglie una strategia, stima i tempi e riflette sulla fiducia nelle proprie capacità.'),card('02','Prestazione e monitoraggio','La strategia sta funzionando? Durante il lavoro l’agente sollecita controlli di comprensione, attenzione al passo corrente e riconoscimento degli ostacoli, senza sostituirsi allo studente.'),card('03','Auto-riflessione','Che cosa ha funzionato e che cosa cambierei? Il confronto fra obiettivi e risultati aiuta a ragionare sulle strategie e sulle emozioni, e a preparare il tentativo successivo.')),
+      h('div',{class:'site-callout'},h('strong',{},'La guida si progetta. L’autonomia si esercita.'),h('p',{},'Il professionista definisce il protocollo, le domande e il livello di supporto. L’agente è istruito a offrire indizi e domande di processo, evitando di consegnare direttamente la soluzione. Le risposte generate richiedono comunque supervisione.'))),
+    section('educazione','IL VALORE EDUCATIVO','Dare struttura, lasciando spazio alla scelta.',
+      'Il compito diventa un’occasione per esplicitare un piano e osservare il proprio modo di procedere. I micro-obiettivi rendono visibili i passi; il dialogo invita a motivare le scelte e a rivederle.',
+      h('div',{class:'site-grid two'},card('→','Per educatori e insegnanti','Prepara attività e materiali, assegna sessioni singole o percorsi ordinati, accompagna la gestione del tempo e confronta ciò che lo studente aveva previsto con ciò che ha registrato.'),card('→','Per psicologi','Configura protocolli fondati sulle tre fasi SRL, descrivi esigenze funzionali e livelli di supporto, rileggi le interazioni e usa gli indicatori come elementi per la tua analisi professionale.')),
+      h('p',{class:'site-footnote'},'Il progetto può essere adattato a differenti esigenze di apprendimento. La compatibilità con uno specifico bisogno educativo e gli effetti sull’apprendimento devono essere valutati nel contesto d’uso: non sono garantiti dalla piattaforma.')),
+    section('strumenti','DENTRO ABLET','Due spazi, un percorso condiviso.',
+      'Un’interfaccia essenziale per chi studia e un ambiente di progettazione e osservazione per chi lo accompagna.',
+      h('div',{class:'site-grid three'},card('A','Lo spazio dello studente','Avatar e interazione vocale, testo sempre disponibile, scelta fra attività libera e programma assegnato. La sequenza viene mostrata quando lo studente la richiede.'),card('B','Lo spazio del professionista','Studenti, attività, protocolli personalizzabili e modelli di base protetti. Ogni sessione mantiene il riferimento alla versione del protocollo assegnata.'),card('C','Osservare il processo','Tempi dichiarati e registrati, micro-obiettivi, richieste d’aiuto, strategie e conversazioni. Indicatori descrittivi da interpretare, senza trasformarli in un voto globale di autoregolazione.')),
+      h('div',{class:'site-product-band'},h('div',{},h('p',{class:'site-eyebrow'},'PROGETTARE → ACCOMPAGNARE → RILEGGERE'),h('h3',{},'La tecnologia rende visibile il percorso.'),h('p',{},'Puoi partire dai modelli SRL, creare un’attività e programmare le sessioni dalla scheda dello studente. Poi osservi come si sviluppa il dialogo e adatti il tuo intervento.')),h('div',{class:'site-demo-metrics'},h('span',{},'ESEMPIO ILLUSTRATIVO'),h('strong',{},'Piano · Strategie · Riflessione'),h('p',{},'Tempo previsto 20 min'),h('div',{class:'site-demo-bar'}),h('p',{},'Micro-obiettivi 2 su 3 · dati sintetici')))),
+    section('inizia','INIZIA CON ABLET','Dal tuo profilo alla prima sessione.',
+      'La registrazione è riservata a educatori e psicologi. Gli studenti accedono con le credenziali predisposte dal professionista.',
+      h('div',{class:'site-grid three'},card('1','Crea il profilo','Indica il tuo nome, la professione e, se vuoi, l’organizzazione e il tuo ambito di lavoro. Il profilo rimane privato.'),card('2','Prepara lo spazio','Configura un provider oppure esplora la modalità dimostrativa. Scegli un modello di protocollo e personalizza attività e supporti.'),card('3','Accompagna lo studente','Crea l’accesso dello studente, registra le autorizzazioni necessarie e programma un’attività o una sequenza di sessioni.')),
+      h('div',{class:'site-actions'},link('Registrati come professionista',register,'solid'),link('Leggi il manuale',`${BASE}/manual.php`,'outline'))),
+    section('domande','DOMANDE FREQUENTI','Prima di iniziare.', 'Le funzioni e i loro limiti, con chiarezza.',
+      ...[
+        ['ABLET fornisce le risposte al compito?','L’obiettivo progettuale è guidare lo studente con domande, indizi e controlli di processo. I modelli generativi possono commettere errori: il professionista configura e supervisiona il percorso.'],
+        ['È un trattamento o uno strumento diagnostico?','ABLET è una piattaforma di supporto educativo. Non sostituisce valutazioni, insegnamento o interventi professionali. Il funzionamento tecnico non dimostra efficacia clinica o educativa.'],
+        ['Voce e avatar funzionano su ogni dispositivo?','La disponibilità dipende da browser, autorizzazioni e motore vocale configurato. Sono presenti comandi testuali alternativi e strumenti di diagnostica; il browser può richiedere un tocco per avviare l’audio.'],
+        ['Quali dati vengono registrati?','L’app registra testo dei dialoghi, azioni, tempi e valutazioni inserite. ABLET non archivia permanentemente l’audio; l’eventuale elaborazione vocale esterna dipende dal motore scelto e dalle autorizzazioni.'],
+        ['La registrazione include un servizio AI gratuito?','L’account non include credito dei provider. Il professionista configura il servizio e verifica disponibilità, tariffe e quote. La modalità dimostrativa utilizza risposte simulate.'],
+        ['I profili professionali sono pubblici o verificati?','No. Il profilo è privato e la professione è autodichiarata. La registrazione non verifica un’abilitazione professionale e non attribuisce certificazioni.']
+      ].map(([q,a])=>h('details',{class:'site-faq'},h('summary',{},q),h('p',{},a)))),
+    section('account-data','INFORMAZIONI SULL’ACCOUNT','Uno spazio professionale, con dati separati.',
+      'Per creare l’account vengono salvati nome, e-mail usata come codice di accesso, password in forma di hash, professione dichiarata e gli eventuali dati di presentazione. Il profilo non è un elenco pubblico e non è inviato al modello linguistico per il dialogo dello studente.',
+      h('p',{},'L’e-mail non viene verificata e non viene inviata una conferma automatica: conserva le credenziali. Gli account studente vengono creati dal professionista. Per il trattamento dei dati degli studenti il professionista deve configurare le autorizzazioni e le condizioni applicabili alla propria attività.'),
+      h('details',{},h('summary',{},'Riferimenti del modello educativo'),h('p',{},'Zimmerman, B. J. (2002). Becoming a Self-Regulated Learner: An Overview. Theory Into Practice, 41(2), 64–70. Il modello orienta il progetto; la sua citazione non costituisce una validazione di ABLET.'),h('a',{href:'https://doi.org/10.1207/s15430421tip4102_2',target:'_blank',rel:'noopener'},'Leggi il riferimento scientifico')))),
+    h('footer',{class:'site-footer'},h('div',{},h('strong',{},'ABLET'),h('p',{},'Adaptive Based Learning Enhancer Tool'),h('p',{},'Progetto scientifico: Prof. Angelo Rega.')),
+      h('div',{},h('a',{href:student},'Accesso studente'),h('a',{href:professional},'Accesso educatore / psicologo'),h('a',{href:register},'Crea profilo'),h('a',{href:'#account-data'},'Informazioni sull’account')))));
+  if(location.hash && /^#[a-z-]+$/.test(location.hash)) document.getElementById(location.hash.slice(1))?.scrollIntoView?.();
+}
+function registration() {
+  const status=h('p',{role:'alert','aria-live':'polite'}),submit=h('button',{type:'submit',class:'primary'},'Crea il mio profilo');
+  const name=h('input',{required:true,maxlength:80,autocomplete:'name'}),email=h('input',{type:'email',required:true,maxlength:190,autocomplete:'username',autocapitalize:'none'});
+  const profession=h('select',{},h('option',{value:'educator'},'Educatore / educatrice'),h('option',{value:'psychologist'},'Psicologo / psicologa'));
+  const org=h('input',{maxlength:160,autocomplete:'organization'}),bio=h('textarea',{maxlength:2000}),password=h('input',{type:'password',required:true,minlength:12,maxlength:72,autocomplete:'new-password'}),repeat=h('input',{type:'password',required:true,minlength:12,maxlength:72,autocomplete:'new-password'});
+  const accept=h('input',{type:'checkbox',required:true}),trap=h('input',{name:'website',tabindex:'-1',autocomplete:'off'});
+  const field=(label,input)=>h('label',{},label,input);
+  const form=h('form',{class:'card signup-card',onsubmit:async e=>{e.preventDefault();status.textContent='';if(password.value!==repeat.value){status.textContent='Le password non coincidono.';return;}submit.disabled=true;
+    try{const r=await api('POST','/api/register',{full_name:name.value,email:email.value,profession:profession.value,organization:org.value,biography:bio.value,password:password.value,accepted_notice:accept.checked,website:trap.value});S.csrf=r.csrf;S.user=r.user;boot();}catch(x){status.textContent=errText(x);}finally{submit.disabled=false;}}},
+    h('p',{class:'site-eyebrow'},'IL TUO SPAZIO DI LAVORO'),h('h1',{},'Crea il profilo professionale'),h('p',{},'Per educatori e psicologi. Gli studenti ricevono le credenziali dal professionista.'),
+    h('div',{class:'grid g2'},field('Nome e cognome',name),field('Professione dichiarata',profession)),field('E-mail · sarà il tuo codice di accesso',email),field('Organizzazione (facoltativa)',org),field('Presentazione professionale (facoltativa)',bio),
+    h('div',{class:'grid g2'},field('Password · almeno 12 caratteri',password),field('Conferma password',repeat)),h('div',{class:'signup-trap','aria-hidden':'true'},field('Lascia vuoto',trap)),
+    h('label',{class:'inline'},accept,h('span',{},'Ho letto le ',h('a',{href:`${BASE}/#account-data`,target:'_blank',rel:'noopener'},'informazioni sull’account'),'. Comprendo che il profilo è privato e la professione autodichiarata.')),
+    h('p',{class:'small muted'},'Non viene inviata un’e-mail di conferma. Conserva le credenziali. Nessun credito AI è incluso nella registrazione.'),status,submit,
+    h('p',{},h('a',{href:`${BASE}/?accesso=docente`},'Ho già un account → Accedi')),h('p',{},h('a',{href:`${BASE}/`},'← Torna alla homepage')));
+  clear(root).append(h('main',{id:'main',class:'signup-page'},form));
+}

@@ -3,9 +3,21 @@
 Piattaforma web in italiano per sostenere l'autoregolazione dell'apprendimento con un agente pedagogico conversazionale.
 Committente scientifico: Prof. Angelo Rega.
 
-**Stato: MVP con modalità Attività libera (aggiornamento 0.8.7).** Frontend HTML/CSS/JavaScript senza dipendenze, backend PHP, database MySQL/MariaDB.
+**Stato: MVP con modalità Attività libera (aggiornamento 0.9.0).** Frontend HTML/CSS/JavaScript senza dipendenze, backend PHP, database MySQL/MariaDB.
 
 > La riuscita tecnica dell'MVP non equivale alla sua validazione scientifica: soglie, livelli di supporto, codebook e lessico di polarità sono parametri progettuali da validare.
+
+## Versione 0.9.0 — sito pubblico e registrazione professionale
+
+Homepage con presentazione psicologica/educativa, tre fasi SRL, funzioni, percorsi di ingresso, FAQ, informazioni sull’account e riferimento a Zimmerman (2002). Gli accessi Studente ed Educatore / psicologo sono in alto a destra. Le anteprime sono illustrative, con contenuti sintetici: non sono screenshot di sessioni reali.
+
+Registrazione da `?registrazione=professionista`: nome, e-mail, password, professione educatore/psicologo, organizzazione e presentazione facoltative. Accesso immediato al proprio ambiente con provider demo, rubriche e impostazioni iniziali. Profilo privato modificabile da **Impostazioni applicazione → Il mio profilo**. Il ruolo tecnico condiviso conserva l’isolamento per proprietario; non abilita l’accesso a dati altrui.
+
+La professione è autodichiarata. Nessuna verifica della qualifica o dell’e-mail, invio di conferma o recupero password via e-mail: il modulo lo dichiara. La registrazione non include credito AI. Protezioni: CSRF, hash password, validazione server, limite di tentativi per IP, e-mail univoca e campo antispam. Per chiudere le nuove registrazioni impostare `ALLOW_SELF_REGISTRATION=0` in config.php o nell’ambiente (valore predefinito 1). L’informativa del titolare dell’installazione va completata prima dell’apertura pubblica: il testo sull’account descrive il funzionamento tecnico, non sostituisce tale informativa.
+
+**Aggiornamento obbligatorio del database:** conservare config.php, .env e storage/, caricare i file e usare install.php → Aggiorna database per applicare **010_professional_profiles.sql**. La migrazione aggiunge una tabella e non modifica credenziali o ruoli precedenti. Eliminare di nuovo public/install.php e aprire refresh.php. Nessuna reinstallazione o azzeramento.
+
+Dettagli: [docs/SITO_E_ACCOUNT.md](docs/SITO_E_ACCOUNT.md).
 
 ## Versione 0.8.7 — verifica prima del rilascio
 

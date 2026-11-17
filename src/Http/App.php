@@ -215,6 +215,7 @@ final class App
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>ABLET — supporto all'autoregolazione dello studio</title>
+<meta name="description" content="ABLET accompagna lo studio attraverso pianificazione, monitoraggio e auto-riflessione. Una piattaforma per studenti, educatori e psicologi.">
 <meta name="theme-color" content="#2f6f6a">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-capable" content="yes">

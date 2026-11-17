@@ -56,16 +56,7 @@ final class Setup
             $pdo->prepare('INSERT INTO users (pseudonym, role, login, password_hash, display_alias) VALUES (?,?,?,?,?)')
                 ->execute([Ids::pseudonym(), $role, $login, password_hash($pw, PASSWORD_DEFAULT), $alias]);
             $id = (int)$pdo->lastInsertId();
-            $pdo->prepare("INSERT INTO provider_configs (owner_id, provider_key, label, is_default) VALUES (?, 'demo', 'Modalità dimostrativa (risposte simulate)', 1)")->execute([$id]);
-            foreach (['pianificazione_autoregolazione' => 'osservazione', 'comprensione_testo' => 'prestazione'] as $tpl => $purpose) {
-                $cfg = json_decode((string)file_get_contents(ABLET_ROOT . "/resources/templates/$tpl.json"), true);
-                $r = $cfg['observation_rubric'];
-                $pdo->prepare('INSERT INTO rubrics (owner_id, title, purpose, scale_min, scale_max, criteria_json) VALUES (?,?,?,?,?,?)')
-                    ->execute([$id, $r['title'], $purpose, $r['scale']['min'], $r['scale']['max'], json_encode($r['criteria'], JSON_UNESCAPED_UNICODE)]);
-            }
-            $pdo->prepare('INSERT INTO professional_settings (owner_id, voice, avatar, retention) VALUES (?,?,?,?)')
-                ->execute([$id, json_encode(['engine' => 'browser', 'input_enabled' => true, 'output_enabled' => true, 'autoplay' => true, 'language' => 'it-IT', 'rate' => 1.0, 'pitch' => 1.0, 'voice_name' => '', 'store_audio' => false]),
-                    json_encode(['enabled' => true, 'name' => 'Ablet', 'style' => 'volto', 'color' => '#2f6f6a']), json_encode(['messages_days' => 365, 'technical_logs_days' => 30])]);
+            self::initializeProfessionalWorkspace($pdo, $id);
         });
         self::ensureCodebook($pdo);
         return $pw;
@@ -75,6 +66,21 @@ final class Setup
     {
         $cb = (string)file_get_contents(ABLET_ROOT . '/resources/codebook/codebook_v0.1.json');
         $pdo->prepare('INSERT IGNORE INTO codebook_versions (version, content_json) VALUES (?,?)')->execute(['0.1', $cb]);
+    }
+
+    /** Configurazione iniziale comune a installatore e registrazione pubblica. Chiamare nella transazione dell'account. */
+    public static function initializeProfessionalWorkspace(PDO $pdo, int $id): void
+    {
+        $pdo->prepare("INSERT INTO provider_configs (owner_id, provider_key, label, is_default) VALUES (?, 'demo', 'Modalità dimostrativa (risposte simulate)', 1)")->execute([$id]);
+        foreach (['pianificazione_autoregolazione' => 'osservazione', 'comprensione_testo' => 'prestazione'] as $tpl => $purpose) {
+            $cfg = json_decode((string)file_get_contents(ABLET_ROOT . "/resources/templates/$tpl.json"), true);
+            $r = $cfg['observation_rubric'];
+            $pdo->prepare('INSERT INTO rubrics (owner_id, title, purpose, scale_min, scale_max, criteria_json) VALUES (?,?,?,?,?,?)')
+                ->execute([$id, $r['title'], $purpose, $r['scale']['min'], $r['scale']['max'], json_encode($r['criteria'], JSON_UNESCAPED_UNICODE)]);
+        }
+        $pdo->prepare('INSERT INTO professional_settings (owner_id, voice, avatar, retention) VALUES (?,?,?,?)')
+            ->execute([$id, json_encode(['engine' => 'browser', 'input_enabled' => true, 'output_enabled' => true, 'autoplay' => true, 'language' => 'it-IT', 'rate' => 1.0, 'pitch' => 1.0, 'voice_name' => '', 'store_audio' => false]),
+                json_encode(['enabled' => true, 'name' => 'Ablet', 'style' => 'volto', 'color' => '#2f6f6a']), json_encode(['messages_days' => 365, 'technical_logs_days' => 30])]);
     }
 
     /** Chiave che dimostra la titolarità dell'installazione: INSTALL_KEY, oppure la password del database nelle installazioni precedenti. Mai vuota. */

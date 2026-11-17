@@ -8,7 +8,7 @@ let dirty = false, navigationCleanup = () => {};
 const leaveEditor = () => !dirty || confirm('Ci sono modifiche non salvate. Uscire senza salvarle?');
 addEventListener('beforeunload', e => { if (dirty) { e.preventDefault(); e.returnValue = ''; } });
 const TABS = [['dash','Panoramica'],['students','Studenti'],['protocols','Protocolli'],['activities','Attività'],['manual','Manuale e tutorial']];
-const SETTINGS = [['providers','Provider'],['voice','Voce e avatar'],['coding','Validazione codifiche'],['privacy','Dati e autorizzazioni']];
+const SETTINGS = [['account','Il mio profilo'],['providers','Provider'],['voice','Voce e avatar'],['coding','Validazione codifiche'],['privacy','Dati e autorizzazioni']];
 const STATE = { created: 'Non avviata', forethought: 'Pianificazione', performance: 'Lavoro', self_reflection: 'Riflessione', paused: 'In pausa', safety_hold: 'Sospensione di sicurezza', closed_complete: 'Conclusa', closed_incomplete: 'Chiusa incompleta' };
 const LEVELS = ['0 · autonomo con checkpoint essenziali', '1 · supporto su richiesta', '2 · guida condivisa', '3 · guida strutturata'];
 const nd = (v, u = '') => v == null ? 'non calcolabile' : `${v}${u}`;
@@ -31,7 +31,7 @@ export async function mount(el) {
   // Su dispositivi piccoli il menu parte chiuso; il contenuto resta raggiungibile senza overlay.
   if (typeof matchMedia === 'function') { const narrow=matchMedia('(max-width: 63.99rem)'); menu.open=!narrow.matches; const adapt=()=>{menu.open=!narrow.matches;}; narrow.addEventListener?.('change',adapt); navigationCleanup=()=>narrow.removeEventListener?.('change',adapt); }
   clear(main).append(h('div',{class:'professional-layout'},menu, view));
-  ({ dash, students, protocols, activities, providers, voice, coding, privacy, manual })[tab]().catch(e => toast(errText(e)));
+  ({ dash, students, protocols, activities, providers, voice, coding, privacy, manual, account })[tab]().catch(e => toast(errText(e)));
 }
 
 // ───────────────────────── panoramica
@@ -533,3 +533,16 @@ async function privacy() {
 }
 
 async function manual() { clear(view).append(h('h1',{},'Manuale e tutorial'),h('p',{},'Guida completa alle tre fasi SRL, protocolli, attività assegnate agli studenti reali, voce, costi e gestione dei dati.'),h('a',{class:'access-card',href:`${BASE}/manual.php`,target:'_blank',rel:'noopener'},'Apri il manuale dettagliato e il tutorial passo passo')); }
+
+// Profilo dell'account autenticato: nessun identificatore altrui nel percorso.
+async function account() {
+  const r=await api('GET','/api/psy/account'),p=r.profile;
+  const name=h('input',{value:p.full_name,required:true,maxlength:80,autocomplete:'name'});
+  const profession=sel([['educator','Educatore / educatrice'],['psychologist','Psicologo / psicologa']],p.profession);
+  const organization=h('input',{value:p.organization||'',maxlength:160,autocomplete:'organization'});
+  const biography=h('textarea',{maxlength:2000});biography.value=p.biography||'';
+  const status=h('p',{role:'status'}),save=h('button',{type:'submit',class:'primary'},'Salva profilo');
+  const form=h('form',{class:'card',onsubmit:async e=>{e.preventDefault();save.disabled=true;status.textContent='';try{await api('PUT','/api/psy/account',{full_name:name.value,profession:profession.value,organization:organization.value,biography:biography.value});status.textContent='Profilo aggiornato. Il nome nella barra si aggiornerà al prossimo accesso.';}catch(x){status.textContent=errText(x);}finally{save.disabled=false;}}},
+    field('Nome e cognome',name),field('Professione dichiarata',profession),field('Organizzazione (facoltativa)',organization),field('Presentazione professionale (facoltativa)',biography),status,save);
+  clear(view).append(h('h1',{},'Il mio profilo'),h('p',{},'Il profilo è privato e appartiene al tuo account. Non viene pubblicato in un elenco di professionisti. La qualifica è autodichiarata e non verificata da ABLET.'),h('p',{class:'small muted'},'Codice di accesso: '+r.login),form);
+}

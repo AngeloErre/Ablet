@@ -38,6 +38,7 @@ App::route('GET', '/api/health', static function (): array {
 App::route('GET', '/api/me', [App::class, 'me']);
 App::route('POST', '/api/login', [App::class, 'login']);
 App::route('POST', '/api/logout', [App::class, 'logout']);
+\Ablet\Http\AccountApi::registerRoutes();
 StudentApi::register();
 \Ablet\Http\VoiceApi::register();
 PsyApi::register();

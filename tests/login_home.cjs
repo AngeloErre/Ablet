@@ -14,9 +14,9 @@ function render(search){const root=new Element('div'),html=new Element('html');h
  vm.runInContext(source,ctx);ctx.login();return all(root);
 }
 const home=render('');const links=home.filter(e=>e.tag==='a');
-check('La home propone due link di accesso distinti',links.length===2&&links[0].attrs.href!==links[1].attrs.href);
+check('La home propone due link di accesso distinti',links.some(e=>e.attrs.href==='/ablet/?accesso=studente')&&links.some(e=>e.attrs.href==='/ablet/?accesso=docente'));
 check('Link studente corretto',links.some(e=>e.attrs.href==='/ablet/?accesso=studente'&&text(e).includes('Accedi come studente')));
-check('Link docente corretto',links.some(e=>e.attrs.href==='/ablet/?accesso=docente'&&text(e).includes('Accedi come docente')));
+check('Link docente corretto',links.some(e=>e.attrs.href==='/ablet/?accesso=docente'&&text(e).includes('educatore / psicologo')));
 check('La home non chiede credenziali prima della scelta',!home.some(e=>e.tag==='input'));
 for (const [portal,label] of [['studente','Accesso studente'],['docente','Accesso docente / psicologo']]){
  const elements=render('?accesso='+portal);
@@ -24,4 +24,10 @@ for (const [portal,label] of [['studente','Accesso studente'],['docente','Access
  check('Modulo credenziali presente per '+portal,elements.filter(e=>e.tag==='input').length===2);
  check('Ritorno alla scelta disponibile per '+portal,elements.some(e=>e.tag==='a'&&e.attrs.href==='/ablet/'));
 }
+check('La home presenta le tre fasi SRL',home.some(e=>text(e).includes('Previsione e pianificazione'))&&home.some(e=>text(e).includes('Auto-riflessione')));
+check('La home offre registrazione professionale',links.some(e=>e.attrs.href==='/ablet/?registrazione=professionista'));
+check('Le anteprime sono dichiarate illustrative',home.some(e=>e.tag==='figcaption'&&text(e).includes('illustrativa')));
+const signup=render('?registrazione=professionista');
+check('Modulo registrazione presente',signup.some(e=>e.tag==='form')&&signup.some(e=>e.tag==='input'&&e.attrs.type==='email'));
+check('Registrazione richiede conferma delle informazioni',signup.some(e=>e.tag==='input'&&e.attrs.type==='checkbox'&&Object.hasOwn(e.attrs,'required')));
 console.log(`Superati: ${pass}`);
