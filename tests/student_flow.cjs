@@ -1,0 +1,35 @@
+const fs=require('node:fs'),vm=require('node:vm'),assert=require('node:assert/strict');let passed=0;
+const check=(label,value)=>{assert(value,label);console.log('✓ '+label);passed++;};
+class El{constructor(tag,attrs={},kids=[]){this.tag=tag;this.attrs=attrs;this.children=kids.flat(Infinity).filter(x=>x!=null&&x!==false);this.style={setProperty(){}};this.classList={add(){},remove(){},toggle(){}};}append(...xs){this.children.push(...xs);}replaceChildren(...xs){this.children=xs;}querySelectorAll(){return [];}querySelector(){return null;}setAttribute(){}focus(){}}
+const text=x=>typeof x==='string'?x:x?.children?.map(text).join(' ')||'';const all=x=>typeof x==='object'?[x,...(x.children||[]).flatMap(all)]:[];
+const root=new El('div'),document={visibilityState:'visible',documentElement:{classList:{contains:()=>false}},addEventListener(){},createElementNS:()=>new El('svg'),querySelector(){return null;}};
+let home={look:{voice:{},avatar:{}},sessions:[],activities:[],programs:[{status:'active',title:'Percorso',steps:[{id:1,activity_id:10,activity:'Primo compito',status:'pending',current:true,available:true},{id:2,activity_id:11,activity:'Secondo segreto',status:'pending',current:false,available:false}]}]};
+let listens=0,opts,lastSpeech,starts=[];
+const voice={canSpeak:true,canListen:true,unlock(){},stopSpeaking(){},abortListening(){},listen(o){listens++;opts=o;},speak(t,o){lastSpeech=o;return true;}};
+const ctx=vm.createContext({document,prefs:{},S:{user:{alias:'Studente'},slow:true},h:(tag,attrs,...kids)=>new El(tag,attrs,kids),clear:e=>{e.replaceChildren();return e;},api:async()=>home,createVoice:()=>voice,avatar:()=>({el:new El('svg'),setState(){}}),addEventListener(){},removeEventListener(){},matchMedia:()=>({matches:false}),navigator:{},pwa:{},setTimeout,clearTimeout,setInterval,clearInterval,toast(){},applyPrefs(){},BASE:'',console});
+const src=fs.readFileSync(__dirname+'/../public/assets/student.js','utf8').replace(/^import .*;$/mg,'').replace(/^export /mg,'');vm.runInContext(src,ctx);
+(async()=>{
+ ctx.mount(root);await new Promise(r=>setImmediate(r));check('Avvio chiede la modalità senza mostrare attività',text(root).includes('Come vuoi lavorare')&&!text(root).includes('Primo compito'));
+ all(root).find(e=>e.tag==='button'&&text(e).includes('Tutte in sequenza')).attrs.onclick();await new Promise(r=>setImmediate(r));
+ check('Mostra soltanto l’attività attuale',text(root).includes('Primo compito')&&!text(root).includes('Secondo segreto'));
+ vm.runInContext('prepareQueue({step:1})',ctx);check('La coda conserva la sessione successiva',vm.runInContext('runQueue.length===1&&runQueue[0].step===2',ctx));
+ ctx.sheet=(title,body)=>{ctx.sheetBody=body;};ctx.sequenceSheet();check('La sequenza è mostrata dopo richiesta',text(ctx.sheetBody).includes('Secondo segreto'));
+ check('Richiesta vocale riconosciuta',!!ctx.intent('Qual è la sequenza delle attività?'));
+ vm.runInContext("stage={};ses={state:'forethought',agent_enabled:true,messages:[{id:1,role:'agent',content:'Cosa farai?'}]};av={setState(){}};setUi=()=>{};update=()=>{};renderCaption=()=>[];showHeard=()=>{};hideHeard=()=>{};",ctx);
+ ctx.afterTurn();check('Non ascolta mentre parla l’assistente',listens===0);lastSpeech.onEnd();check('Ascolta dopo la fine reale anche su rete lenta',listens===1&&opts.silenceMs===3000);
+ opts.onSilence();opts.onEnd();check('Silenzio blocca la riattivazione automatica',vm.runInContext('autoMicBlocked',ctx));
+ vm.runInContext('ses.messages.push({id:2,role:"agent",content:"Riprova?"})',ctx);ctx.afterTurn();lastSpeech.onEnd();check('Una nuova risposta non riapre il microfono bloccato',listens===1);
+ ctx.onMic();check('Il tocco riattiva il microfono',listens===2&&!vm.runInContext('autoMicBlocked',ctx));
+ vm.runInContext('stopAll()',ctx);opts.onText('obsoleto',true);opts.onEnd();check('Risultati tardivi ignorati dopo stop',vm.runInContext('ui!=="confirm"',ctx));
+ ctx.startActivity=async(a,resume,step)=>starts.push(step);check('Sequenza bloccata non avviata',!await ctx.advanceSequence()&&starts.length===0);
+ home.programs[0].steps[0].status='completed';home.programs[0].steps[0].current=false;home.programs[0].steps[1].current=true;home.programs[0].steps[1].available=true;
+ check('Sequenza avvia solo il successivo sbloccato',await ctx.advanceSequence()&&starts[0]===2);
+ vm.runInContext("runQueue=[{step:2,activity:11}];stage={overlay:h('div')};ses={id:'session1',state:'closed_complete',goals:[],slots:{},avatar:{}};",ctx);
+ let advances=0;ctx.advanceSequence=async()=>{advances++;return true;};ctx.renderOverlay();check('Completamento attende la fine del messaggio prima di avanzare',advances===0);await lastSpeech.onEnd();check('Completamento avanza automaticamente una volta',advances===1);ctx.renderOverlay();check('Ridisegno non ripete il messaggio di completamento',vm.runInContext('stage.completedAnnounced===ses.id',ctx));
+ vm.runInContext("ses.state='closed_incomplete';",ctx);ctx.renderOverlay();check('Chiusura incompleta non avanza',advances===1);
+ ctx.uuid=()=> 'reliability-event';ctx.api=async()=>({notice:'provider_rate_limited',session:{id:1,state:'forethought',agent_enabled:true,messages:[{id:99,role:'agent',content:'Attendi un poco.'}]}});
+ ctx.afterTurn=()=>{};vm.runInContext('busy=false;autoMicBlocked=false;ses={id:1};',ctx);
+ check('Errore quota restituisce il controllo dopo messaggio salvato',await ctx.send('message',{text:'Il mio piano'})&&!vm.runInContext('busy',ctx));
+ check('Errore provider sospende il microfono automatico',vm.runInContext('autoMicBlocked',ctx));
+ console.log('Superati: '+passed);
+})().catch(e=>{console.error(e);process.exit(1);});

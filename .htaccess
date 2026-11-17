@@ -1,0 +1,16 @@
+# ABLET in una cartella del sito (es. hosting condiviso in cui la document root non si può spostare su public/).
+# Tutte le richieste vengono instradate in public/; il resto del progetto non è raggiungibile dal web.
+<IfModule mod_rewrite.c>
+  RewriteEngine On
+  RewriteRule ^$ public/ [L]
+  RewriteRule ^(?!public/)(.*)$ public/$1 [L]
+</IfModule>
+<FilesMatch "^(\.env.*|config\.php|composer\.(json|lock))$">
+  <IfModule mod_authz_core.c>
+    Require all denied
+  </IfModule>
+  <IfModule !mod_authz_core.c>
+    Order allow,deny
+    Deny from all
+  </IfModule>
+</FilesMatch>

@@ -3,33 +3,96 @@
 Piattaforma web in italiano per sostenere l'autoregolazione dell'apprendimento con un agente pedagogico conversazionale.
 Committente scientifico: Prof. Angelo Rega.
 
-**Stato: MVP con modalità Attività libera (aggiornamento 0.5).** Frontend HTML/CSS/JavaScript senza dipendenze, backend PHP, database MySQL/MariaDB.
+**Stato: MVP con modalità Attività libera (aggiornamento 0.8.5).** Frontend HTML/CSS/JavaScript senza dipendenze, backend PHP, database MySQL/MariaDB.
 
 > La riuscita tecnica dell'MVP non equivale alla sua validazione scientifica: soglie, livelli di supporto, codebook e lessico di polarità sono parametri progettuali da validare.
 
-## Versione 0.5 — attività assegnate, protocolli, voce e manuale
+## Versione 0.8.5 — attese e diagnostica LLM
 
-- **Assegna attività**: scegli studente reale, attività e versione pubblicata. Disponibile anche dalle schede Studenti e Attività. Le nuove attività dell’interfaccia sono riservate agli assegnatari per impostazione iniziale. Le precedenti restano visibili come prima, finché non viene fatta un’assegnazione esplicita.
-- **Protocolli più chiari**: tre sezioni SRL separate, guida ai processi e pannelli avanzati richiudibili. Cinque originali di base protetti; è possibile creare copie personali modificabili.
-- **Eliminazione reversibile**: anteprima dell’impatto, archiviazione e revoca delle assegnazioni. Dati e versioni delle sessioni già create sono conservati. Il ripristino non riattiva automaticamente le assegnazioni.
-- **Prompt economico**: rappresentazione compatta, cronologia recente, stime di token/costi per provider e modello selezionati. Sono disponibili tariffe note per alcuni modelli Gemini/OpenAI; altrimenti occorre inserire tariffe verificate. Il limite completo del turno viene controllato prima dell’invio con una stima prudenziale, non un tokenizer ufficiale.
-- **Voce server alternativa**: sintesi e trascrizione tramite Gemini o API audio OpenAI compatibili, prova di sintesi e microfono, diagnostica. Richiede provider e modelli audio configurati e autorizzazione dedicata per ciascuno studente. Nessuna archiviazione permanente dell’audio in ABLET. Le condizioni del provider restano applicabili.
-- **Manuale e tutorial**: pagina `manual.php`, raggiungibile dalla scheda **Manuale e tutorial**, con procedure, tre fasi, esempio completo, gestione degli studenti e risoluzione dei problemi.
+- Il lock PHP della sessione viene liberato dopo l’autenticazione, prima delle operazioni lente. Login e logout conservano la scrittura della sessione.
+- Gli HTTP 429 non generano retry immediati. Si rispetta `Retry-After` (o `RetryInfo.retryDelay` Gemini) con un’attesa condivisa per configurazione, senza tenere il browser in attesa. In assenza di indicazioni: 60 secondi per 429, 10 per 503. Le quote giornaliere possono richiedere un’attesa più lunga: questi tempi non garantiscono il ripristino della quota.
+- Retry transitori limitati dal budget complessivo; con `Retry-After` si torna subito al browser. La prova connessione ha un budget di 40 secondi.
+- Distinzione quota / indisponibilità / timeout; messaggio dello studente conservato e microfono automatico sospeso dopo un errore del provider. Si riattiva manualmente.
+- Dettaglio sessione: richieste, rinvii locali, token dichiarati e ultime 30 chiamate tecniche. I consumi mancanti non sono stimati come consumi nulli; i retry HTTP interni non sono contati separatamente.
 
-### Aggiornare dalla versione precedente
+Nessuna nuova migrazione: l’attesa usa la tabella `rate_limits` già esistente. Preservare `config.php`, `.env` e `storage/`, poi aprire `refresh.php`. Il modello configurato dallo psicologo e il sistema TTS/STT restano quelli scelti. Le verifiche automatiche usano provider simulati, senza chiamare Gemini reale.
 
-Fare un backup, caricare i file conservando `config.php`, l’eventuale `.env` e `storage/`, poi aprire `install.php` e scegliere **Aggiorna il database**. Sono necessarie le migrazioni **007_assignments.sql** e **008_audio_consent.sql**. Eliminare nuovamente `public/install.php` e usare `refresh.php` nel dispositivo interessato. Non azzerare o reinstallare il database.
+Verifica della 0.8.5: **513 controlli superati**, inclusi tre profili SRL sintetici, conservazione del messaggio dopo errori e richieste concorrenti con lo stesso cookie. Dettaglio e limiti in [docs/VERIFICA_0.8.5.md](docs/VERIFICA_0.8.5.md).
 
-Le credenziali esistenti restano valide. Home con accessi distinti `?accesso=studente` e `?accesso=docente`; il link non cambia il ruolo dell’account.
+## Versione 0.8.4 — risultato persistente della prova provider
 
-### Verifica 0.5
+«Prova la connessione» mostra l’avanzamento, blocca doppi clic e conserva l’esito sotto la configurazione: modello salvato, categoria di errore, eventuale HTTP e dettaglio restituito dal server. Anche errori di rete, sessione o autorizzazione restano leggibili. Le modifiche nel modulo richiedono «Salva» prima della prova, che usa la configurazione persistita. Il cambiamento migliora la diagnosi; non dimostra il ripristino della connessione Gemini dell’utente. Nessuna modifica al TTS, al riconoscimento, al modello o ai parametri inviati all’LLM. Nessuna migrazione.
 
-- PHP 8.4 + MariaDB 11.8 in ambiente isolato: 100 controlli di dominio/persistenza, 28 di attività libera e **165 HTTP**, tutti superati.
-- `php tests/features_v05.php`: **33** controlli su cinque originali, fasi SRL preservate, economia, tariffe, limiti e WAV.
-- `node tests/voice.cjs`: **22** controlli del motore browser; `node tests/voice_server.cjs`: **15** controlli del ciclo di registrazione/riproduzione server.
-- `node tests/login_home.cjs`: **10** controlli accessi; `node tests/ui_v05.cjs`: **9** controlli dei nuovi pannelli con DOM simulato; `node tests/cache_refresh.cjs`: **12** controlli cache.
+## Versione 0.8.3 — diagnosi del TTS Chrome
 
-I test audio e provider sono simulati: non attestano l’udibilità su un dispositivo reale né la disponibilità di un modello per una chiave. Provare entrambi i pulsanti vocali sul dispositivo e con il provider scelto. Le prove di rendering DOM non equivalgono a una verifica visiva su tablet. Il successo tecnico non equivale a validazione scientifica.
+- La sintesi attende fino a due secondi il caricamento delle voci (`voiceschanged`) e segnala esplicitamente quando Chrome non ne rende disponibile nessuna.
+- Frasi molto lunghe sono suddivise in segmenti di massimo 180 caratteri. La selezione automatica privilegia una voce locale della lingua richiesta; una voce esplicitamente selezionata mantiene la precedenza.
+- Nuova pagina pubblica `public/tts-check.html`, raggiungibile anche da Voce e avatar → Diagnostica audio del dispositivo. Confronta voce nativa, ABLET breve e ABLET lunga, mostrando elenco voci, eventi, errori e stato di attivazione.
+- Il report è temporaneo e rimane sul dispositivo: non include testo delle sessioni, credenziali o audio. Con «Copia report» può essere condiviso manualmente. I test possono utilizzare il servizio TTS del dispositivo o del produttore del browser, come le altre funzioni TTS browser.
+- Il riconoscimento vocale non è modificato.
+
+La causa del problema riferito sul Chrome dell’utente non è ancora confermata: occorre eseguire A/B/C sul dispositivo interessato e indicare quali prove si sentono. Gli eventi `start`/`end` non dimostrano da soli che l’audio sia udibile. Nessun aggiornamento del database. Caricare i file, aprire `refresh.php` e quindi `tts-check.html`.
+
+## Versione 0.8.2 — modifica delle caratteristiche dell’Attività Libera
+
+In Attività e materiali, ogni scheda libera offre «Modifica caratteristiche». Il professionista può aggiornare titolo, indicazioni generali, criteri orientativi di completamento e durata indicativa anche dopo l’assegnazione. Questi campi sono configurabili anche alla creazione. Il compito specifico e la stima del tempo restano definiti dallo studente nel dialogo SRL. Materiali preimpostati e disattivazione dell’agente restano esclusi per questa modalità.
+
+Le modifiche valgono per le nuove sessioni. Prima del primo aggiornamento si conserva in ogni sessione già creata una copia delle precedenti caratteristiche; gli aggiornamenti successivi non la sovrascrivono. Dialoghi, stime dello studente, versione del protocollo e assegnazioni rimangono conservati. La modifica è riservata al proprietario dell’attività e richiede autenticazione e CSRF.
+
+Nessuna migrazione aggiuntiva. Preservare `config.php`, `.env`, `storage/`, poi aprire `refresh.php`.
+
+## Versione 0.8.1 — tutti gli originali sono modelli protetti
+
+Anche «Pianificazione e autoregolazione» e «Comprensione del testo» sono identificati esplicitamente come modelli di base protetti. Gli originali si consultano o si copiano; non si modificano e non si eliminano tramite l’app. I protocolli personali già esistenti, anche con gli stessi titoli, conservano configurazioni, assegnazioni e sessioni: sono ora distinti da un’etichetta «Copia personale modificabile». Nessuna migrazione aggiuntiva. Caricare anche `resources/templates/` e aggiornare la cache con `refresh.php`.
+
+## Versione 0.8 — scelta del percorso e turni vocali
+
+All’ingresso lo studente sceglie «Un’attività alla volta» oppure «Tutte in sequenza». La scelta vale per l’accesso corrente e può essere cambiata dalla home. Viene mostrata soltanto l’attività attuale; la sequenza viene costruita e mostrata soltanto dopo il comando «Qual è la sequenza delle attività?» (pulsante o richiesta vocale/testuale durante una sessione). Il piano dei micro-obiettivi della singola attività resta consultabile separatamente.
+
+In modalità sequenza il completamento di una sessione avvia quella successiva dopo il messaggio conclusivo. L’ordine assegnato dal professionista, le autorizzazioni e i blocchi rimangono applicati. Una pausa o una chiusura incompleta non fanno avanzare il percorso. Se il browser blocca la voce conclusiva è disponibile «Prosegui con la prossima attività». Non vengono avviate sessioni in anticipo.
+
+Il microfono si apre al termine reale della risposta dell’assistente, se l’ingresso audio è abilitato e autorizzato. Tre secondi senza parlato lo spengono con un avviso; occorre toccare «Parla» per riattivarlo. Anche dopo una risposta successiva resta spento fino al tocco. La trascrizione passa dalla conferma esistente prima dell’invio. Nella modalità server il segnale è analizzato localmente: l’energia audio rileva suoni, non distingue perfettamente parlato e rumore ambientale; non è inviato audio se non si rileva alcun suono significativo. Inizialmente il browser può richiedere il permesso del microfono. Restano disponibili scrittura e pulsanti.
+
+**Aggiornamento dalla 0.7:** nessuna nuova migrazione. Preservare `config.php`, `.env`, `storage/`, quindi aprire `refresh.php`.
+
+**Verifica:** test simulati del percorso, della visibilità della sequenza, dei blocchi e del riarmo manuale; timer di silenzio verificati per entrambi i motori vocali. Voce reale, rumore ambientale, permessi e comportamento mobile vanno verificati sul dispositivo utilizzato.
+
+## Versione 0.7 — interfaccia responsive
+
+- Navigazione laterale su desktop, menu richiudibile sotto 64rem; cambio orientamento gestito senza ricaricare.
+- Ricerca studenti per alias, pseudonimo e codice; creazione account in pannello richiudibile.
+- Sessioni ordinate in schede adattive; moduli e griglie senza larghezze minime che eccedano lo schermo.
+- Collegamenti alle tre fasi SRL, stato della bozza e conferma prima di abbandonare modifiche non salvate nell’editor dei protocolli. Non è un salvataggio automatico.
+- Controlli vocali proporzionati allo schermo, barra raggiungibile, pannelli con altezza dinamica e margini sicuri; gestione del focus nei dialoghi.
+- Tabelle scorrevoli raggiungibili da tastiera, contrasto del link nella barra superiore corretto.
+
+**Aggiornamento dalla 0.6:** caricare i file aggiornati preservando `config.php`, `.env` e `storage/`. Nessuna nuova migrazione rispetto alla 009. Aprire `refresh.php` dopo il caricamento per aggiornare la cache.
+
+**Verifica:** test DOM dell’interfaccia, accessi e cicli audio simulati. Il browser grafico nell’ambiente di sviluppo non si avvia: la verifica visiva su dispositivi fisici resta necessaria. Provare 320/390px, tablet 768/1024px e desktop 1366px, anche con caratteri ingranditi, tastiera virtuale e rotazione. Verificare sul dispositivo la reale udibilità della voce e i permessi del microfono.
+
+## Versione 0.6 — programmazione centrata sullo studente
+
+Le nuove assegnazioni si fanno esclusivamente in **Studenti → scheda dello studente → Programma sessioni · attività e protocolli**. Attività e Protocolli sono cataloghi/configuratori: non offrono comandi di assegnazione. Non esiste più una scheda separata Assegna attività.
+
+Per ogni studente puoi preparare una **sessione singola** oppure una **sequenza di 1–30 sessioni**. Ogni riga fissa un’attività e una versione pubblicata del protocollo; puoi cambiare ordine e rimuovere righe prima di assegnare. Ogni sessione svolge il proprio ciclo SRL completo. Le sequenze non confondono le tre fasi con tre incontri separati.
+
+Lo studente avvia solo la prima sessione non risolta del programma. La chiusura completa sblocca la successiva. La chiusura incompleta blocca la catena finché il professionista decide di saltare quella sessione o riprogrammare. Gli avvii ripetuti dello stesso passo riprendono la medesima sessione, senza duplicarla. Il backend impedisce avvii fuori ordine o dalla vecchia voce generica dell’attività.
+
+L’annullamento di un programma disattiva le sessioni future, conservando la sessione eventualmente già creata e i suoi dati. L’archiviazione di un protocollo blocca le future sessioni collegate; il ripristino non le riattiva automaticamente. Per cambiare attività/protocolli dopo l’assegnazione si annullano le sessioni future e si crea un nuovo programma. Le sessioni già create mantengono la versione originale.
+
+Le assegnazioni delle versioni precedenti rimangono conservate e revocabili nella scheda dello studente. Programmare una stessa attività disattiva per quello studente la vecchia abilitazione a ripeterla liberamente. I dati e gli altri studenti già assegnati non vengono cancellati.
+
+**☰ Impostazioni applicazione** raccoglie Provider, Voce e avatar, Validazione codifiche e Dati e autorizzazioni. Il manuale `manual.php` è aggiornato al nuovo percorso operativo. Restano disponibili i cinque modelli SRL protetti, i protocolli personali, le stime di costo e il motore audio server della 0.5.
+
+### Aggiornare
+
+Fare un backup e caricare i file conservando `config.php`, l’eventuale `.env` e `storage/`. Aprire `install.php` e scegliere **Aggiorna il database**: dalla 0.5 serve **009_session_plans.sql**; da versioni precedenti vengono applicate anche le migrazioni mancanti. Eliminare nuovamente `public/install.php` e usare `refresh.php`. Non reinstallare o azzerare il database.
+
+### Verifica 0.6
+
+PHP 8.4 + MariaDB 11.8: **100** controlli di dominio/persistenza, **28** di attività libera e **192 HTTP**, tutti superati. I 27 nuovi controlli HTTP coprono ordine, isolamento degli studenti, protocolli diversi, avvio idempotente, chiusura incompleta, salto professionale, annullamento e archiviazione/ripristino.
+
+Test JavaScript senza dipendenze: `voice.cjs` (22), `voice_server.cjs` (15), `login_home.cjs` (10), `cache_refresh.cjs` (12), `ui_v05.cjs` aggiornato al nuovo flusso (13). `features_v05.php` mantiene 33 controlli di modelli, economia e WAV. Le prove DOM/audio sono simulate: resta la verifica visiva e sonora sul dispositivo reale. Il successo tecnico non equivale a validazione scientifica.
 
 ## Aggiornamento e pulizia della cache
 
@@ -43,7 +106,7 @@ Il caricamento usa ora una versione comune basata sul contenuto di tutti i modul
 
 Lo studente sceglie e descrive il compito nel dialogo e stima il tempo totale oppure i tempi dei micro-obiettivi. L'agente usa le conoscenze del modello per guidare il lavoro **sempre secondo il protocollo SRL pubblicato assegnato dallo psicologo**. Tempi disponibili e durate stimate rimangono separati. Compiti e materiali preimpostati restano disponibili.
 
-**Per aggiornare un sito già installato:** caricare i file conservando `config.php`, `.env` e `storage/`, poi aprire l'installatore e scegliere **Aggiorna il database** (migrazioni mancanti fino alla 008); non reinstallare o azzerare lo schema. Istruzioni complete e limiti in [docs/ATTIVITA_LIBERA.md](docs/ATTIVITA_LIBERA.md).
+**Per aggiornare un sito già installato:** caricare i file conservando `config.php`, `.env` e `storage/`, poi aprire l'installatore e scegliere **Aggiorna il database** (migrazioni mancanti fino alla 009); non reinstallare o azzerare lo schema. Istruzioni complete e limiti in [docs/ATTIVITA_LIBERA.md](docs/ATTIVITA_LIBERA.md).
 
 ## Requisiti
 
@@ -120,7 +183,7 @@ bash tests/run_all.sh    # usa il database indicato in .env e lo AZZERA: usare u
 - `tests/run.php` — 100 verifiche di dominio e persistenza.
 - `tests/free_activity.php` — 28 verifiche della modalità libera senza database.
 - `tests/run_free_activity.sh` — 28 verifiche di dominio e 31 HTTP della modalità libera (azzera il database di test).
-- `tests/http.php` — 165 verifiche end-to-end via HTTP (accesso, isolamento, ciclo SRL, sicurezza, provider, dashboard, configuratore, autorizzazioni, conservazione, accordo fra codificatori, gruppi).
+- `tests/http.php` — 192 verifiche end-to-end via HTTP (accesso, isolamento, ciclo SRL, sicurezza, provider, dashboard, configuratore, autorizzazioni, conservazione, accordo fra codificatori, gruppi).
 - Con trigger non disponibili, `tests/run.php` salta le 3 verifiche a livello di database (97 invece di 100).
 - Contro un'installazione Apache: `APP=https://host/ablet MOCK=http://127.0.0.1:8102 DB_NAME=… DB_USER=… DB_PASS=… php tests/http.php` (database di test).
 
@@ -129,7 +192,7 @@ bash tests/run_all.sh    # usa il database indicato in .env e lo AZZERA: usare u
 ```
 bin/                    migrate.php, create_user.php (riga di comando)
 public/install.php      installatore dal browser (hosting senza SSH)
-database/migrations/    001–008 · database/seeds/demo.php
+database/migrations/    001–009 · database/seeds/demo.php
 public/index.php        front controller · public/assets/ interfaccia (app, student, psy, charts, voice)
 resources/              templates (slide 16 e 17), codebook, indicatori, schema dell'output
 src/Domain/             macchina a stati SRL, regole di adattamento, prompt a cinque livelli, convalide, calibrazione, tempi

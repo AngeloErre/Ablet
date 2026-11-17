@@ -1,0 +1,127 @@
+{
+  "$comment": "Schema dell'output strutturato richiesto all'LLM. Sottoinsieme conservativo di JSON Schema: ogni adapter lo adatterà ai vincoli del proprio provider (incremento 4). La convalida autorevole è in src/Domain/Agent/OutputValidator.php.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "student_message",
+    "current_phase",
+    "proposed_action",
+    "proposed_state_update",
+    "evidence_message_ids",
+    "suggested_support_level",
+    "safety_status"
+  ],
+  "properties": {
+    "student_message": {
+      "type": "string",
+      "description": "Unico testo mostrato allo studente. Breve, una sola richiesta principale."
+    },
+    "current_phase": {
+      "type": "string",
+      "enum": [
+        "forethought",
+        "performance",
+        "self_reflection",
+        "safety_hold"
+      ]
+    },
+    "proposed_action": {
+      "type": "string",
+      "enum": [
+        "continue",
+        "offer_hint",
+        "suggest_strategy_change",
+        "request_self_monitoring",
+        "begin_performance",
+        "return_to_planning",
+        "begin_reflection",
+        "suggest_close",
+        "safety_hold"
+      ]
+    },
+    "proposed_state_update": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "slots": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "task_statement": {
+              "type": "string"
+            },
+            "expected_outcome": {
+              "type": "string"
+            },
+            "completion_criterion": {
+              "type": "string"
+            },
+            "prior_knowledge": {
+              "type": "string"
+            },
+            "expected_difficulty": {
+              "type": "integer"
+            },
+            "self_efficacy": {
+              "type": "integer"
+            },
+            "strategy": {
+              "type": "string"
+            },
+            "time_estimate_min": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 600
+            },
+            "restatement": {
+              "type": "string"
+            },
+            "available_time_min": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 600,
+              "description": "Tempo disponibile dichiarato; distinto dalla durata stimata."
+            }
+          }
+        },
+        "micro_goals": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "description"
+            ],
+            "properties": {
+              "description": {
+                "type": "string"
+              },
+              "estimated_minutes": {
+                "type": "integer"
+              }
+            }
+          }
+        }
+      }
+    },
+    "evidence_message_ids": {
+      "type": "array",
+      "items": {
+        "type": "integer"
+      },
+      "description": "Id dei messaggi dello studente su cui si basa l'aggiornamento proposto."
+    },
+    "suggested_support_level": {
+      "type": "integer",
+      "description": "0–3. Inferenza dell'LLM: registrata, mai applicata direttamente."
+    },
+    "safety_status": {
+      "type": "string",
+      "enum": [
+        "ok",
+        "distress",
+        "emergency"
+      ]
+    }
+  }
+}

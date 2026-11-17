@@ -1,0 +1,21 @@
+{
+  "name": "ABLET — il tuo aiuto per studiare",
+  "short_name": "ABLET",
+  "description": "Assistente a voce che aiuta a organizzare lo studio: obiettivi, piano, controllo e riflessione. Il lavoro lo fai tu.",
+  "lang": "it",
+  "id": "./",
+  "start_url": "./?origine=app",
+  "scope": "./",
+  "display": "standalone",
+  "display_override": ["fullscreen", "standalone"],
+  "orientation": "any",
+  "background_color": "#fff7ec",
+  "theme_color": "#2f6f6a",
+  "categories": ["education"],
+  "icons": [
+    { "src": "assets/icons/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "assets/icons/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
+    { "src": "assets/icons/maskable-192.png", "sizes": "192x192", "type": "image/png", "purpose": "maskable" },
+    { "src": "assets/icons/maskable-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ]
+}

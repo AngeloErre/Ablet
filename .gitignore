@@ -1,0 +1,22 @@
+# Configurazioni e credenziali locali
+.env
+.env.*
+!.env.example
+config.php
+config.*.php
+*.pem
+*.key
+
+# Dati e log generati durante l'uso
+storage/*
+!storage/.htaccess
+*.log
+*.sql.gz
+*.sqlite
+*.sqlite3
+
+# Dipendenze, output e file del sistema operativo
+node_modules/
+vendor/
+.DS_Store
+Thumbs.db
