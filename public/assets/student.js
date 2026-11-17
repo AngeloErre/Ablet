@@ -17,7 +17,7 @@ const NOTICE = {
   autorizzazione_mancante: 'Non posso risponderti finché non arriva un\'autorizzazione. Avvisa il tuo psicologo.',
 };
 
-let studyMode=null, homeData=null, runQueue=[], autoMicBlocked=false, listenEpoch=0, runEpoch=0;
+let entryChoice=null, studyMode=null, homeData=null, runQueue=[], autoMicBlocked=false, listenEpoch=0, runEpoch=0;
 let root, ses = null, look = null, voice = null, av = null;
 let ui = 'idle';                 // idle | speaking | listening | confirm | thinking
 let lastLocal = '', lastProposal = 0, lastSpoken = 0, countdown = null, micBroken = false, noSpeech = 0, busy = false, tick = null;
@@ -39,7 +39,7 @@ function icon(n, size = 34) {
 const K = () => { const k=(prefs.kid ||= {subs:true,sound:true}); if(k.auto == null)k.auto=true;return k; };
 const saveK = () => applyPrefs();
 
-export function mount(el) { root = el; studyMode=null; runQueue=[]; home(); }
+export function mount(el) { root = el; entryChoice=null; studyMode=null; runQueue=[]; home(); }
 
 // ────────────────────────────────────────────── utilità
 const say = (text, opts = {}) => (K().sound && voice?.canSpeak) ? voice.speak(text, { ...opts, onError: message => {
@@ -70,6 +70,62 @@ function setVoice(cfg) {
   });
 }
 
+// L'accoglienza usa la voce configurata, senza chiamare l'LLM né avviare una sessione.
+function entryWelcome(kid, d, hello) {
+  const free = d.activities.some(a => a.mode === 'free' && a.available);
+  const assigned = (d.programs || []).some(p => p.status === 'active') || d.activities.some(a => a.mode !== 'free' && a.available);
+  const question = `${hello} Vuoi scegliere un’attività libera oppure seguire il programma che ti è stato assegnato?`;
+  const status = h('p', {class:'small', role:'status', 'aria-live':'polite'}, 'Puoi rispondere a voce oppure toccare una scelta.');
+  const confirmation = h('div', {class:'kchips'});
+  const epoch = runEpoch;
+  const current = () => epoch === runEpoch && entryChoice === null;
+  const choose = choice => {
+    if (!current()) return;
+    if (!(choice === 'free' ? free : assigned)) { status.textContent = 'Questa scelta non è ancora disponibile. Chiedi al tuo professionista.'; return; }
+    stopAll(); entryChoice = choice; studyMode = choice === 'free' ? 'single' : null; runQueue = []; home();
+  };
+  const listen = () => {
+    if (!current() || !voice.canListen) return;
+    voice.abortListening(); confirmation.replaceChildren();
+    let text = '', error = false;
+    const mine = ++listenEpoch;
+    status.textContent = 'Ti ascolto…'; av.setState('listening');
+    voice.listen({silenceMs:3000,
+      onText:(t) => { if(current() && mine === listenEpoch) text = t; },
+      onSilence:() => { if(current() && mine === listenEpoch) status.textContent = 'Microfono spento. Tocca Parla per rispondere.'; },
+      onError:message => { if(current() && mine === listenEpoch) { error = true; status.textContent = message; } },
+      onEnd:() => {
+        if(!current() || mine !== listenEpoch) return;
+        av.setState('idle');
+        if(error) return;
+        if(!text.trim()) { status.textContent = 'Microfono spento. Tocca Parla per rispondere.'; return; }
+        const choice = entryIntent(text);
+        status.textContent = `Hai detto: «${text}».`;
+        if(!choice) { confirmation.replaceChildren(h('p',{},'Scegli attività libera o programma assegnato, oppure tocca uno dei due pulsanti.')); return; }
+        confirmation.replaceChildren(h('button',{class:'kchip go',onclick:()=>choose(choice)},choice === 'free' ? 'Confermo: attività libera' : 'Confermo: programma assegnato'),
+          h('button',{class:'kchip',onclick:listen},'Ridico'));
+      }
+    });
+  };
+  const speak = () => {
+    if(!current()) return;
+    listenEpoch++; voice.abortListening(); confirmation.replaceChildren();
+    status.textContent = 'Ascolta la domanda; poi puoi rispondere.';
+    say(question,{onEnd:()=>{if(current() && K().auto !== false) listen();},onError:()=>{if(current())status.textContent='Tocca Ascolta per sentire la domanda, oppure scegli un pulsante.';}});
+  };
+  kid.append(head(''), h('main',{class:'khome'},h('div',{class:'khello'},av.el,h('div',{},h('h1',{},'Che cosa vuoi fare oggi?'),h('p',{},question))),
+    h('div',{class:'ktiles'},h('button',{class:'ktile',disabled:!free,onclick:()=>choose('free')},h('h2',{},'Attività libera'),h('p',{},free?'Scegli tu il compito e organizziamo il lavoro.':'Il professionista deve rendere disponibile un’attività libera.')),
+      h('button',{class:'ktile',disabled:!assigned,onclick:()=>choose('assigned')},h('h2',{},'Programma assegnato'),h('p',{},assigned?'Segui il percorso preparato per te.':'Non hai un programma disponibile.'))),
+    h('div',{class:'kchips'},playButton({class:'kchip',onclick:()=>{voice.unlock();speak();}},'🔊 Ascolta'),
+      h('button',{class:'kchip',disabled:!voice.canListen,onclick:()=>{voice.unlock();voice.stopSpeaking();listen();}},'🎤 Parla')),status,confirmation));
+  // Il browser può richiedere un gesto per consentire l'audio: Ascolta rimane sempre disponibile.
+  if(K().sound && voice.canSpeak) speak();
+}
+function entryIntent(text) {
+  const free = /\bliber[aoe]\b/i.test(text), assigned = /\b(programma|assegnat[oaie]|percorso)\b/i.test(text);
+  return free === assigned ? null : free ? 'free' : 'assigned';
+}
+
 // ────────────────────────────────────────────── schermata iniziale
 async function home() {
   clearInterval(tick); stopAll(); ses = null; stage = null;
@@ -96,6 +152,7 @@ async function home() {
         a.available || resume ? h('span', { class: 'go' }, resume ? 'Continua ▶' : 'Inizia ▶') : h('span', { class: 'kpill' }, a.reason === 'autorizzazioni' ? '🔒 manca un\'autorizzazione' : '🔒 non ancora pronto')));
   };
   clear(root).append(kid);
+  if(!entryChoice){ entryWelcome(kid,d,hello); return; }
   if(!studyMode){
     kid.append(head(''),h('main',{class:'khome'},h('h1',{},'Come vuoi lavorare oggi?'),h('p',{},'Puoi fermarti dopo un’attività oppure proseguire con le successive. Puoi sempre fare una pausa.'),h('div',{class:'ktiles'},
       h('button',{class:'ktile',onclick:()=>{voice.unlock();studyMode='single';home();}},h('h2',{},'Un’attività alla volta'),h('p',{},'Alla fine torni alla scelta delle attività.')),
@@ -108,12 +165,12 @@ async function home() {
   keepAwake(false);
   kid.append(head('', [inst, h('button', { class: 'kicon', 'aria-label': 'Come funziona ABLET', onclick: () => infoSheet(d.notice) }, 'ℹ')]),
     h('main', { class: 'khome' },
-      h('div', { class: 'khello' }, av.el, h('div', {}, h('h1', {}, hello), h('p', {}, studyMode==='sequence'?'Modalità sequenza: scegli da dove iniziare.':'Modalità: un’attività alla volta.'),h('button',{class:'kchip',onclick:()=>{studyMode=null;runQueue=[];home();}},'Cambia modalità'),
+      h('div', { class: 'khello' }, av.el, h('div', {}, h('h1', {}, hello), h('p', {}, studyMode==='sequence'?'Modalità sequenza: scegli da dove iniziare.':'Modalità: un’attività alla volta.'),h('button',{class:'kchip',onclick:()=>{entryChoice=null;studyMode=null;runQueue=[];home();}},'Cambia scelta'),
         playButton({ class: 'kicon', onclick: () => { voice.unlock(); av.setState('speaking'); say(hello + ' Tocca un compito per iniziare.', { onEnd: () => av.setState('idle') }); } }, '🔊 Ascolta'))),
-      h('button',{class:'kchip',onclick:sequenceSheet},'Qual è la sequenza delle attività?'),
-      (d.programs || []).filter(p=>p.status==='active').slice(0,1).map(p=>{const step=p.steps.find(s=>s.current);return step?h('section',{class:'card'},h('h2',{},'La tua attività'),h('h3',{},step.activity),h('button',{class:'kchip go',disabled:!step.available,onclick:()=>{prepareQueue({step:step.id});startActivity({id:step.activity_id},null,step.id);}},step.available?'Inizia o riprendi':'Chiedi al tuo professionista')):null;}),
-      open.filter(s=>!d.activities.some(a=>+a.id===+s.activity_id)&&!(d.programs||[]).some(p=>p.status!=='cancelled'&&p.steps.some(step=>step.session_public_id===s.public_id))).map(s=>h('button',{class:'kchip',onclick:()=>startActivity({id:s.activity_id},s)},`Riprendi sessione precedente: ${s.title}`)),
-      h('div', { class: 'ktiles' }, ((d.programs||[]).some(p=>p.status==='active')?[]:d.activities.slice(0,1)).map(a => a.mode !== 'free' ? tile(a) : h('section', {}, tile(a),
+      entryChoice==='assigned'?h('button',{class:'kchip',onclick:sequenceSheet},'Qual è la sequenza delle attività?'):null,
+      (entryChoice==='assigned' ? d.programs || [] : []).filter(p=>p.status==='active').slice(0,1).map(p=>{const step=p.steps.find(s=>s.current);return step?h('section',{class:'card'},h('h2',{},'La tua attività'),h('h3',{},step.activity),h('button',{class:'kchip go',disabled:!step.available,onclick:()=>{prepareQueue({step:step.id});startActivity({id:step.activity_id},null,step.id);}},step.available?'Inizia o riprendi':'Chiedi al tuo professionista')):null;}),
+      (entryChoice==='assigned'?open:[]).filter(s=>!d.activities.some(a=>+a.id===+s.activity_id)&&!(d.programs||[]).some(p=>p.status!=='cancelled'&&p.steps.some(step=>step.session_public_id===s.public_id))).map(s=>h('button',{class:'kchip',onclick:()=>startActivity({id:s.activity_id},s)},`Riprendi sessione precedente: ${s.title}`)),
+      h('div', { class: 'ktiles' }, (entryChoice==='free'?d.activities.filter(a=>a.mode==='free'):((d.programs||[]).some(p=>p.status==='active')?[]:d.activities.filter(a=>a.mode!=='free').slice(0,1))).map(a => a.mode !== 'free' ? tile(a) : h('section', {}, tile(a),
         open.filter(s => s.activity_id === a.id).map(s => h('button', { class: 'kchip', onclick: () => startActivity(a, s) }, `Riprendi: ${s.title}`)),
         a.available && open.some(s => s.activity_id === a.id) ? h('button', { class: 'kchip go', onclick: () => startActivity(a, null) }, '＋ Nuovo compito libero') : null))),
       d.sessions.some(s => s.state.startsWith('closed')) ? h('details', { class: 'small' }, h('summary', {}, 'Compiti finiti'), h('ul', {}, d.sessions.filter(s => s.state.startsWith('closed')).map(s => h('li', {}, `${s.title} — ${new Date(s.at * 1000).toLocaleDateString('it-IT')}`)))) : null));
@@ -124,7 +181,7 @@ function sequenceItems(d=homeData){
     ...(d?.activities||[]).filter(a=>a.available).map(a=>({activity:a.id,title:a.title}))];
 }
 function prepareQueue(selected){
-  const items=sequenceItems();const index=items.findIndex(x=>selected.step?x.step===selected.step:!x.step&&+x.activity===+selected.activity);
+  const items=entryChoice==='free'?[]:sequenceItems();const index=items.findIndex(x=>selected.step?x.step===selected.step:!x.step&&+x.activity===+selected.activity);
   runQueue=studyMode==='sequence'&&index>=0?items.slice(index+1):[];
 }
 function sequenceSheet(){

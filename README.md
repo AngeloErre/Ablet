@@ -3,9 +3,17 @@
 Piattaforma web in italiano per sostenere l'autoregolazione dell'apprendimento con un agente pedagogico conversazionale.
 Committente scientifico: Prof. Angelo Rega.
 
-**Stato: MVP con modalità Attività libera (aggiornamento 0.8.5).** Frontend HTML/CSS/JavaScript senza dipendenze, backend PHP, database MySQL/MariaDB.
+**Stato: MVP con modalità Attività libera (aggiornamento 0.8.6).** Frontend HTML/CSS/JavaScript senza dipendenze, backend PHP, database MySQL/MariaDB.
 
 > La riuscita tecnica dell'MVP non equivale alla sua validazione scientifica: soglie, livelli di supporto, codebook e lessico di polarità sono parametri progettuali da validare.
+
+## Versione 0.8.6 — accoglienza vocale dello studente
+
+All’accesso compare subito l’avatar con la domanda «Vuoi scegliere un’attività libera oppure seguire il programma che ti è stato assegnato?». La voce usa impostazioni e autorizzazioni esistenti; se il browser richiede un gesto, usare Ascolta. La risposta vocale viene ascoltata dopo la fine della domanda, con arresto dopo tre secondi di silenzio e riattivazione manuale. La scelta riconosciuta richiede conferma; restano disponibili due pulsanti.
+
+Attività libera mostra soltanto le attività libere già rese disponibili dal professionista, con il protocollo assegnato. Programma assegnato conserva la scelta tra una sessione alla volta e tutte in sequenza. La sequenza resta visibile soltanto su richiesta. Le opzioni non disponibili sono disabilitate con spiegazione. L’accoglienza non chiama il modello LLM e non crea sessioni. Nessuna nuova migrazione.
+
+Verifica mirata: test del flusso studente con sintesi e riconoscimento simulati, inclusi accoglienza, conferma vocale, separazione libera/programma e sequenze; regressioni audio, interfaccia, accessi e cache. Le politiche di riproduzione automatica e l’udibilità devono essere provate sul dispositivo reale.
 
 ## Versione 0.8.5 — attese e diagnostica LLM
 

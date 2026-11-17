@@ -9,7 +9,15 @@ const voice={canSpeak:true,canListen:true,unlock(){},stopSpeaking(){},abortListe
 const ctx=vm.createContext({document,prefs:{},S:{user:{alias:'Studente'},slow:true},h:(tag,attrs,...kids)=>new El(tag,attrs,kids),clear:e=>{e.replaceChildren();return e;},api:async()=>home,createVoice:()=>voice,avatar:()=>({el:new El('svg'),setState(){}}),addEventListener(){},removeEventListener(){},matchMedia:()=>({matches:false}),navigator:{},pwa:{},setTimeout,clearTimeout,setInterval,clearInterval,toast(){},applyPrefs(){},BASE:'',console});
 const src=fs.readFileSync(__dirname+'/../public/assets/student.js','utf8').replace(/^import .*;$/mg,'').replace(/^export /mg,'');vm.runInContext(src,ctx);
 (async()=>{
- ctx.mount(root);await new Promise(r=>setImmediate(r));check('Avvio chiede la modalità senza mostrare attività',text(root).includes('Come vuoi lavorare')&&!text(root).includes('Primo compito'));
+ ctx.mount(root);await new Promise(r=>setImmediate(r));
+ check('Accoglienza propone libera e programma senza mostrare la sequenza',text(root).includes('Attività libera')&&text(root).includes('Programma assegnato')&&!text(root).includes('Secondo segreto'));
+ check('Accoglienza avvia la domanda vocale',!!lastSpeech);
+ lastSpeech.onEnd();check('Accoglienza ascolta solo dopo la domanda con silenzio di tre secondi',listens===1&&opts.silenceMs===3000);
+ opts.onText('Seguo il programma assegnato',true);opts.onEnd();check('Scelta vocale richiede conferma',text(root).includes('Confermo: programma assegnato'));
+ listens=0;
+ check('Intento vocale ambiguo non decide al posto dello studente',ctx.entryIntent('libera oppure programma')===null);
+ all(root).find(e=>e.tag==='button'&&text(e).startsWith('Programma assegnato')).attrs.onclick();await new Promise(r=>setImmediate(r));
+ check('Programma conserva la scelta una alla volta o sequenza',text(root).includes('Come vuoi lavorare')&&!text(root).includes('Primo compito'));
  all(root).find(e=>e.tag==='button'&&text(e).includes('Tutte in sequenza')).attrs.onclick();await new Promise(r=>setImmediate(r));
  check('Mostra soltanto l’attività attuale',text(root).includes('Primo compito')&&!text(root).includes('Secondo segreto'));
  vm.runInContext('prepareQueue({step:1})',ctx);check('La coda conserva la sessione successiva',vm.runInContext('runQueue.length===1&&runQueue[0].step===2',ctx));
@@ -31,5 +39,9 @@ const src=fs.readFileSync(__dirname+'/../public/assets/student.js','utf8').repla
  ctx.afterTurn=()=>{};vm.runInContext('busy=false;autoMicBlocked=false;ses={id:1};',ctx);
  check('Errore quota restituisce il controllo dopo messaggio salvato',await ctx.send('message',{text:'Il mio piano'})&&!vm.runInContext('busy',ctx));
  check('Errore provider sospende il microfono automatico',vm.runInContext('autoMicBlocked',ctx));
+ ctx.api=async()=>home;home.activities=[{id:55,title:'Il mio compito libero',mode:'free',assignment:'Scegli il tuo compito',available:true,agent_enabled:true}];ctx.mount(root);await new Promise(r=>setImmediate(r));
+ all(root).find(e=>e.tag==='button'&&text(e).startsWith('Attività libera')).attrs.onclick();await new Promise(r=>setImmediate(r));
+ check('Scelta libera mostra i compiti liberi senza aprire il programma',text(root).includes('Il mio compito libero')&&!text(root).includes('Primo compito')&&!text(root).includes('Come vuoi lavorare'));
+ check('Libera non accoda sessioni del programma',vm.runInContext('prepareQueue({activity:55});runQueue.length===0',ctx));
  console.log('Superati: '+passed);
 })().catch(e=>{console.error(e);process.exit(1);});
