@@ -42,4 +42,5 @@ App::route('POST', '/api/logout', [App::class, 'logout']);
 StudentApi::register();
 \Ablet\Http\VoiceApi::register();
 PsyApi::register();
+\Ablet\Http\AdminApi::register();
 App::run();

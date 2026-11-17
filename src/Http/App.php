@@ -96,7 +96,8 @@ final class App
 
     public static function input(): array
     {
-        $limit = str_contains($_SERVER['REQUEST_URI'] ?? '', '/api/voice/') ? 6000000 : 600000;
+        $uri = $_SERVER['REQUEST_URI'] ?? '';
+        $limit = str_contains($uri, '/api/voice/') ? 6000000 : (str_contains($uri, '/api/admin/home/image') ? 3000000 : 600000);
         $raw = file_get_contents('php://input', false, null, 0, $limit + 1) ?: '';
         if (strlen($raw) > $limit) { throw new ApiError(413, 'richiesta_troppo_grande'); }
         if ($raw === '') { return []; }
@@ -110,10 +111,10 @@ final class App
         if (self::$user === null) {
             $id = $_SESSION['uid'] ?? null;
             if (!$id) { throw new ApiError(401, 'non_autenticato'); }
-            $st = Database::pdo()->prepare("SELECT id, pseudonym, role, login, display_alias FROM users WHERE id = ? AND status = 'active'");
+            $st = Database::pdo()->prepare("SELECT id, pseudonym, role, login, display_alias, session_version FROM users WHERE id = ? AND status = 'active'");
             $st->execute([$id]);
             self::$user = $st->fetch() ?: null;
-            if (self::$user === null) { $_SESSION = []; throw new ApiError(401, 'non_autenticato'); }
+            if (self::$user === null || (int)self::$user['session_version'] !== (int)($_SESSION['version'] ?? 1)) { self::$user=null; $_SESSION = []; throw new ApiError(401, 'non_autenticato'); }
             self::$user['id'] = (int)self::$user['id'];
         }
         return self::$user;
@@ -122,7 +123,7 @@ final class App
     public static function requireRole(string $role): array
     {
         $u = self::user();
-        if ($u['role'] !== $role) { throw new ApiError(403, 'non_autorizzato'); }
+        if ($u['role'] !== $role && !($role === 'psychologist' && $u['role'] === 'admin')) { throw new ApiError(403, 'non_autorizzato'); }
         return $u;
     }
 
@@ -150,18 +151,18 @@ final class App
         $in = self::input();
         $login = trim((string)($in['login'] ?? ''));
         self::rateLimit('login:' . hash('sha256', ($_SERVER['REMOTE_ADDR'] ?? '') . '|' . mb_strtolower($login)), 8, 600);
-        $st = Database::pdo()->prepare("SELECT id, password_hash, role FROM users WHERE login = ? AND status = 'active'");
+        $st = Database::pdo()->prepare("SELECT id, password_hash, role, session_version FROM users WHERE login = ? AND status = 'active'");
         $st->execute([$login]);
         $u = $st->fetch();
         // Verifica sempre un hash, anche per utenti inesistenti, per non rivelarne l'esistenza dai tempi di risposta.
         $ok = password_verify((string)($in['password'] ?? ''), $u['password_hash'] ?? password_hash('assente', PASSWORD_DEFAULT));
         if (!$u || !$ok) { throw new ApiError(401, 'credenziali_non_valide'); }
         $expected = $in['expected_role'] ?? null;
-        if ($expected !== null && (!in_array($expected, ['student', 'psychologist'], true) || $u['role'] !== $expected)) {
+        if ($expected !== null && (!in_array($expected, ['student', 'psychologist', 'admin'], true) || ($u['role'] !== $expected && !($expected === 'psychologist' && $u['role'] === 'admin')))) {
             throw new ApiError(403, 'accesso_non_corrispondente');
         }
         session_regenerate_id(true);
-        $_SESSION = ['uid' => (int)$u['id'], 'last' => time(), 'csrf' => bin2hex(random_bytes(24))];
+        $_SESSION = ['uid' => (int)$u['id'], 'version'=>(int)$u['session_version'], 'last' => time(), 'csrf' => bin2hex(random_bytes(24))];
         self::audit('login', 'users', (int)$u['id']);
         return self::me();
     }
@@ -170,6 +171,7 @@ final class App
     {
         $u = null;
         try { $u = self::user(); } catch (ApiError) {}
+        $_SESSION['csrf'] ??= bin2hex(random_bytes(24));
         return ['csrf' => $_SESSION['csrf'], 'user' => $u ? ['role' => $u['role'], 'alias' => $u['display_alias'] ?: $u['login'], 'pseudonym' => $u['pseudonym']] : null];
     }
 

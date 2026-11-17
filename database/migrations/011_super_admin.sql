@@ -1,0 +1,23 @@
+-- Amministrazione installazione e contenuti pubblici della homepage.
+ALTER TABLE users ADD COLUMN session_version INT UNSIGNED NOT NULL DEFAULT 1;
+CREATE TABLE site_homepage (
+ id TINYINT UNSIGNED PRIMARY KEY,
+ draft_json JSON NOT NULL,
+ published_json JSON NOT NULL,
+ revision INT UNSIGNED NOT NULL DEFAULT 1,
+ updated_at DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+INSERT INTO site_homepage(id,draft_json,published_json) VALUES(1,'{}','{}');
+CREATE TABLE site_home_versions (
+ id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+ content_json JSON NOT NULL,
+ editor_id BIGINT UNSIGNED NOT NULL,
+ created_at DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
+ CONSTRAINT fk_site_version_editor FOREIGN KEY(editor_id) REFERENCES users(id) ON DELETE RESTRICT
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+CREATE TABLE site_media (
+ id CHAR(64) PRIMARY KEY,
+ mime VARCHAR(30) NOT NULL,
+ bytes INT UNSIGNED NOT NULL,
+ created_at DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;

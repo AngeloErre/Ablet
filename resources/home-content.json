@@ -1,0 +1,566 @@
+[
+  {
+    "key": "t_e40c292c_1",
+    "default": "a"
+  },
+  {
+    "key": "t_5f9cd113_5",
+    "default": "ABLET"
+  },
+  {
+    "key": "t_1ff06c68_11",
+    "default": "L’approccio"
+  },
+  {
+    "key": "t_304ad423_13",
+    "default": "Come funziona"
+  },
+  {
+    "key": "t_9daa7b44_16",
+    "default": "Dashboard e dati"
+  },
+  {
+    "key": "t_b0987c4b_7",
+    "default": "Domande"
+  },
+  {
+    "key": "t_be9495b0_20",
+    "default": "Accedi come studente"
+  },
+  {
+    "key": "t_a459e8d6_33",
+    "default": "Accedi come educatore / psicologo"
+  },
+  {
+    "key": "t_17cd8889_48",
+    "default": "TECNOLOGIE PER L’APPRENDIMENTO · AUTOREGOLAZIONE"
+  },
+  {
+    "key": "t_3f4d3fca_18",
+    "default": "Imparare a guidare"
+  },
+  {
+    "key": "t_264b79c1_18",
+    "default": "il proprio studio."
+  },
+  {
+    "key": "t_b215235e_153",
+    "default": "Un agente pedagogico che accompagna lo studente a pianificare, monitorare e ripensare il proprio modo di imparare. Con la regia di educatori e psicologi."
+  },
+  {
+    "key": "t_c14e2792_33",
+    "default": "Crea il tuo profilo professionale"
+  },
+  {
+    "key": "t_746dc000_19",
+    "default": "Esplora l’approccio"
+  },
+  {
+    "key": "t_8adb2ed_89",
+    "default": "Dialogo a voce o per iscritto. Attività libere e percorsi assegnati. Un passo alla volta."
+  },
+  {
+    "key": "t_8c25dfc5_19",
+    "default": "Prepariamo il piano"
+  },
+  {
+    "key": "t_3ab22e58_3",
+    "default": "◕‿◕"
+  },
+  {
+    "key": "t_245476bb_52",
+    "default": "Qual è il primo piccolo passo che puoi fare da solo?"
+  },
+  {
+    "key": "t_7f8a9bca_16",
+    "default": "IL MIO OBIETTIVO"
+  },
+  {
+    "key": "t_5efc070a_44",
+    "default": "Capire un testo e raccontarlo con parole mie"
+  },
+  {
+    "key": "t_d051567e_22",
+    "default": "01  Leggo un paragrafo"
+  },
+  {
+    "key": "t_2ec26c29_32",
+    "default": "02  Individuo le idee principali"
+  },
+  {
+    "key": "t_40f9b8e1_5",
+    "default": "Pausa"
+  },
+  {
+    "key": "t_871a3f5a_8",
+    "default": "●  Parla"
+  },
+  {
+    "key": "t_99dd03b5_9",
+    "default": "Riascolta"
+  },
+  {
+    "key": "t_3dc1a57d_47",
+    "default": "Anteprima illustrativa con contenuti sintetici."
+  },
+  {
+    "key": "t_90e05db7_23",
+    "default": "Una domanda che orienta"
+  },
+  {
+    "key": "t_d48b8a91_26",
+    "default": "Un obiettivo comprensibile"
+  },
+  {
+    "key": "t_990aa17f_29",
+    "default": "Una strategia da sperimentare"
+  },
+  {
+    "key": "t_3c59bef5_29",
+    "default": "Una riflessione per ripartire"
+  },
+  {
+    "key": "t_b298e3b0_25",
+    "default": "IL FONDAMENTO PSICOLOGICO"
+  },
+  {
+    "key": "t_d80eef6f_56",
+    "default": "Dallo svolgere un compito al comprendere come si impara."
+  },
+  {
+    "key": "t_6392aa4a_217",
+    "default": "ABLET è progettato attorno al Self-Regulated Learning: un processo ciclico in cui lo studente partecipa attivamente alla definizione degli obiettivi, al controllo del lavoro e alla valutazione delle proprie strategie."
+  },
+  {
+    "key": "t_20ed70ba_2",
+    "default": "01"
+  },
+  {
+    "key": "t_c7d82803_27",
+    "default": "Previsione e pianificazione"
+  },
+  {
+    "key": "t_5419103f_174",
+    "default": "Che cosa devo fare? Quale risultato voglio raggiungere? Lo studente analizza il compito, sceglie una strategia, stima i tempi e riflette sulla fiducia nelle proprie capacità."
+  },
+  {
+    "key": "t_1fed6f27_2",
+    "default": "02"
+  },
+  {
+    "key": "t_c1b18f2b_26",
+    "default": "Prestazione e monitoraggio"
+  },
+  {
+    "key": "t_af77a276_188",
+    "default": "La strategia sta funzionando? Durante il lavoro l’agente sollecita controlli di comprensione, attenzione al passo corrente e riconoscimento degli ostacoli, senza sostituirsi allo studente."
+  },
+  {
+    "key": "t_1eed6d94_2",
+    "default": "03"
+  },
+  {
+    "key": "t_b4b7d4ae_16",
+    "default": "Auto-riflessione"
+  },
+  {
+    "key": "t_896ad769_174",
+    "default": "Che cosa ha funzionato e che cosa cambierei? Il confronto fra obiettivi e risultati aiuta a ragionare sulle strategie e sulle emozioni, e a preparare il tentativo successivo."
+  },
+  {
+    "key": "t_a08d9f80_46",
+    "default": "La guida si progetta. L’autonomia si esercita."
+  },
+  {
+    "key": "t_2ff3289a_244",
+    "default": "Il professionista definisce il protocollo, le domande e il livello di supporto. L’agente è istruito a offrire indizi e domande di processo, evitando di consegnare direttamente la soluzione. Le risposte generate richiedono comunque supervisione."
+  },
+  {
+    "key": "t_4e808491_19",
+    "default": "IL VALORE EDUCATIVO"
+  },
+  {
+    "key": "t_8edf66a3_45",
+    "default": "Dare struttura, lasciando spazio alla scelta."
+  },
+  {
+    "key": "t_d880983f_196",
+    "default": "Il compito diventa un’occasione per esplicitare un piano e osservare il proprio modo di procedere. I micro-obiettivi rendono visibili i passi; il dialogo invita a motivare le scelte e a rivederle."
+  },
+  {
+    "key": "t_973c7cf5_1",
+    "default": "→"
+  },
+  {
+    "key": "t_7d28fd8b_26",
+    "default": "Per educatori e insegnanti"
+  },
+  {
+    "key": "t_a26dadad_182",
+    "default": "Prepara attività e materiali, assegna sessioni singole o percorsi ordinati, accompagna la gestione del tempo e confronta ciò che lo studente aveva previsto con ciò che ha registrato."
+  },
+  {
+    "key": "t_23e1aaa7_13",
+    "default": "Per psicologi"
+  },
+  {
+    "key": "t_341ceac4_192",
+    "default": "Configura protocolli fondati sulle tre fasi SRL, descrivi esigenze funzionali e livelli di supporto, rileggi le interazioni e usa gli indicatori come elementi per la tua analisi professionale."
+  },
+  {
+    "key": "t_f558032c_238",
+    "default": "Il progetto può essere adattato a differenti esigenze di apprendimento. La compatibilità con uno specifico bisogno educativo e gli effetti sull’apprendimento devono essere valutati nel contesto d’uso: non sono garantiti dalla piattaforma."
+  },
+  {
+    "key": "t_99f963df_12",
+    "default": "DENTRO ABLET"
+  },
+  {
+    "key": "t_e33262be_33",
+    "default": "Due spazi, un percorso condiviso."
+  },
+  {
+    "key": "t_ad93779c_109",
+    "default": "Un’interfaccia essenziale per chi studia e un ambiente di progettazione e osservazione per chi lo accompagna."
+  },
+  {
+    "key": "t_c40bf6cc_1",
+    "default": "A"
+  },
+  {
+    "key": "t_83313c62_24",
+    "default": "Lo spazio dello studente"
+  },
+  {
+    "key": "t_3bb6742d_163",
+    "default": "Avatar e interazione vocale, testo sempre disponibile, scelta fra attività libera e programma assegnato. La sequenza viene mostrata quando lo studente la richiede."
+  },
+  {
+    "key": "t_c70bfb85_1",
+    "default": "B"
+  },
+  {
+    "key": "t_6b965a4a_28",
+    "default": "Lo spazio del professionista"
+  },
+  {
+    "key": "t_1ee2494f_153",
+    "default": "Studenti, attività, protocolli personalizzabili e modelli di base protetti. Ogni sessione mantiene il riferimento alla versione del protocollo assegnata."
+  },
+  {
+    "key": "t_c60bf9f2_1",
+    "default": "C"
+  },
+  {
+    "key": "t_e283ca26_21",
+    "default": "Osservare il processo"
+  },
+  {
+    "key": "t_6c095fcb_191",
+    "default": "Tempi dichiarati e registrati, micro-obiettivi, richieste d’aiuto, strategie e conversazioni. Indicatori descrittivi da interpretare, senza trasformarli in un voto globale di autoregolazione."
+  },
+  {
+    "key": "t_cdd5398f_37",
+    "default": "PROGETTARE → ACCOMPAGNARE → RILEGGERE"
+  },
+  {
+    "key": "t_873e0f32_41",
+    "default": "La tecnologia rende visibile il percorso."
+  },
+  {
+    "key": "t_a66c191b_171",
+    "default": "Puoi partire dai modelli SRL, creare un’attività e programmare le sessioni dalla scheda dello studente. Poi osservi come si sviluppa il dialogo e adatti il tuo intervento."
+  },
+  {
+    "key": "t_cc764d1b_20",
+    "default": "ESEMPIO ILLUSTRATIVO"
+  },
+  {
+    "key": "t_9eb2ea77_31",
+    "default": "Piano · Strategie · Riflessione"
+  },
+  {
+    "key": "t_1d938dbe_21",
+    "default": "Tempo previsto 20 min"
+  },
+  {
+    "key": "t_77628ca9_39",
+    "default": "Micro-obiettivi 2 su 3 · dati sintetici"
+  },
+  {
+    "key": "t_e563f04c_31",
+    "default": "LA DASHBOARD DEL PROFESSIONISTA"
+  },
+  {
+    "key": "t_31876a1b_45",
+    "default": "Dai dati del percorso alle domande educative."
+  },
+  {
+    "key": "t_e06acd1f_205",
+    "default": "La panoramica aiuta psicologi ed educatori a rileggere le sessioni. Puoi filtrare per studente, attività e periodo, quindi aprire una sessione per ricostruire piano, strategie, richieste d’aiuto e dialogo."
+  },
+  {
+    "key": "t_d448621f_23",
+    "default": "Tempi e micro-obiettivi"
+  },
+  {
+    "key": "t_3b785ce7_211",
+    "default": "Confronta il tempo previsto dallo studente con quello registrato nell’app e osserva quanti passi sono stati completati. Il tempo registrato non descrive tutto lo studio svolto su carta o fuori dalla piattaforma."
+  },
+  {
+    "key": "t_7e573ba2_20",
+    "default": "Supporto e strategie"
+  },
+  {
+    "key": "t_b1e5eacd_173",
+    "default": "Rileggi indizi richiesti, difficoltà segnalate e adattamenti del supporto. Chiediti quando lo studente cerca aiuto, quali strategie dichiara e che cosa decide di modificare."
+  },
+  {
+    "key": "t_ba552262_24",
+    "default": "Previsioni e valutazioni"
+  },
+  {
+    "key": "t_d0829289_193",
+    "default": "Quando ci sono dati confrontabili, la calibrazione mette in relazione sicurezza dichiarata e prestazione valutata. Se mancano i dati necessari, il risultato viene indicato come non calcolabile."
+  },
+  {
+    "key": "t_fcf2a4bb_168",
+    "default": "Anteprima della dashboard prodotta dal renderer di ABLET con tre sessioni simulate. Non è uno screenshot di studenti reali. Scorri nel riquadro per esplorare i grafici."
+  },
+  {
+    "key": "t_123a2aea_49",
+    "default": "Un dato suggerisce una domanda, non una diagnosi."
+  },
+  {
+    "key": "t_ac7d00a7_270",
+    "default": "Una durata lunga non prova disattenzione, una risposta rapida non prova comprensione, un miglioramento fra sessioni non dimostra da solo efficacia o trasferimento dell’apprendimento. Gli indicatori vanno letti insieme al compito, al contesto e al giudizio professionale."
+  },
+  {
+    "key": "t_7d2ba73d_36",
+    "default": "ANALISI DEI DATI E DELLE INTERAZIONI"
+  },
+  {
+    "key": "t_5ced50dc_52",
+    "default": "Rileggere il processo, senza ridurlo a un punteggio."
+  },
+  {
+    "key": "t_4c8de655_241",
+    "default": "Il dettaglio della sessione affianca tempi, obiettivi, autovalutazioni, valutazioni del professionista, adattamenti e conversazione. Le informazioni osservate, dichiarate dallo studente e valutate dal professionista hanno origini differenti."
+  },
+  {
+    "key": "t_b505655a_25",
+    "default": "Conversazione e codifiche"
+  },
+  {
+    "key": "t_d12f42ac_247",
+    "default": "La conversazione conserva le parole dello studente e i messaggi dell’agente. Le codifiche lessicali o proposte dal modello possono evidenziare segmenti legati al processo SRL: sono proposte da rivedere, non interpretazioni psicologiche definitive."
+  },
+  {
+    "key": "t_bff03e6c_32",
+    "default": "Lettura critica degli indicatori"
+  },
+  {
+    "key": "t_33b68c23_209",
+    "default": "La polarità lessicale descrive le parole usate, non lo stato emotivo. Le latenze di risposta non misurano attenzione o impegno. I raggruppamenti esplorativi non identificano tipologie diagnostiche di studenti."
+  },
+  {
+    "key": "t_4fd57bab_187",
+    "default": "Anteprima del dettaglio sessione: dialogo sintetico e strumenti di revisione delle codifiche. Il codebook iniziale richiede validazione; le analisi automatiche richiedono controllo umano."
+  },
+  {
+    "key": "t_340ca71c_1",
+    "default": "1"
+  },
+  {
+    "key": "t_cf0a10f0_18",
+    "default": "Filtra e confronta"
+  },
+  {
+    "key": "t_507a6f6_152",
+    "default": "Parti da una domanda concreta: la stima dei tempi diventa più aderente? I micro-obiettivi sono sostenibili? In quali momenti viene richiesto un indizio?"
+  },
+  {
+    "key": "t_370cabd5_1",
+    "default": "2"
+  },
+  {
+    "key": "t_46286a60_16",
+    "default": "Apri le evidenze"
+  },
+  {
+    "key": "t_e4911f08_131",
+    "default": "Rileggi i messaggi e i passaggi del piano che accompagnano l’indicatore. Verifica i dati mancanti e rivedi le annotazioni proposte."
+  },
+  {
+    "key": "t_360caa42_1",
+    "default": "3"
+  },
+  {
+    "key": "t_c170f403_28",
+    "default": "Progetta il passo successivo"
+  },
+  {
+    "key": "t_8f4f7fe2_190",
+    "default": "Usa quanto osservato per scegliere con lo studente una strategia da provare o una modifica al supporto. Gli export permettono ulteriori analisi; non rappresentano una validazione automatica."
+  },
+  {
+    "key": "t_6fb8195f_16",
+    "default": "INIZIA CON ABLET"
+  },
+  {
+    "key": "t_879bce89_36",
+    "default": "Dal tuo profilo alla prima sessione."
+  },
+  {
+    "key": "t_1711c879_126",
+    "default": "La registrazione è riservata a educatori e psicologi. Gli studenti accedono con le credenziali predisposte dal professionista."
+  },
+  {
+    "key": "t_f8955e54_15",
+    "default": "Crea il profilo"
+  },
+  {
+    "key": "t_562c2c3d_117",
+    "default": "Indica il tuo nome, la professione e, se vuoi, l’organizzazione e il tuo ambito di lavoro. Il profilo rimane privato."
+  },
+  {
+    "key": "t_a351b93b_17",
+    "default": "Prepara lo spazio"
+  },
+  {
+    "key": "t_d62753b_130",
+    "default": "Configura un provider oppure esplora la modalità dimostrativa. Scegli un modello di protocollo e personalizza attività e supporti."
+  },
+  {
+    "key": "t_b412c7ce_22",
+    "default": "Accompagna lo studente"
+  },
+  {
+    "key": "t_343b8e55_120",
+    "default": "Crea l’accesso dello studente, registra le autorizzazioni necessarie e programma un’attività o una sequenza di sessioni."
+  },
+  {
+    "key": "t_ca89c6e8_30",
+    "default": "Registrati come professionista"
+  },
+  {
+    "key": "t_f69eb455_16",
+    "default": "Leggi il manuale"
+  },
+  {
+    "key": "t_383cb202_17",
+    "default": "DOMANDE FREQUENTI"
+  },
+  {
+    "key": "t_3070acc_18",
+    "default": "Prima di iniziare."
+  },
+  {
+    "key": "t_c7dbe681_43",
+    "default": "Le funzioni e i loro limiti, con chiarezza."
+  },
+  {
+    "key": "t_d7889a23_38",
+    "default": "ABLET fornisce le risposte al compito?"
+  },
+  {
+    "key": "t_b49ee98d_194",
+    "default": "L’obiettivo progettuale è guidare lo studente con domande, indizi e controlli di processo. I modelli generativi possono commettere errori: il professionista configura e supervisiona il percorso."
+  },
+  {
+    "key": "t_b82f1bb2_45",
+    "default": "È un trattamento o uno strumento diagnostico?"
+  },
+  {
+    "key": "t_6250103b_185",
+    "default": "ABLET è una piattaforma di supporto educativo. Non sostituisce valutazioni, insegnamento o interventi professionali. Il funzionamento tecnico non dimostra efficacia clinica o educativa."
+  },
+  {
+    "key": "t_7db70b44_45",
+    "default": "Voce e avatar funzionano su ogni dispositivo?"
+  },
+  {
+    "key": "t_15c8f7ad_207",
+    "default": "La disponibilità dipende da browser, autorizzazioni e motore vocale configurato. Sono presenti comandi testuali alternativi e strumenti di diagnostica; il browser può richiedere un tocco per avviare l’audio."
+  },
+  {
+    "key": "t_c46f2662_30",
+    "default": "Quali dati vengono registrati?"
+  },
+  {
+    "key": "t_7d4df857_206",
+    "default": "L’app registra testo dei dialoghi, azioni, tempi e valutazioni inserite. ABLET non archivia permanentemente l’audio; l’eventuale elaborazione vocale esterna dipende dal motore scelto e dalle autorizzazioni."
+  },
+  {
+    "key": "t_53a46dfc_49",
+    "default": "La registrazione include un servizio AI gratuito?"
+  },
+  {
+    "key": "t_c37ee732_179",
+    "default": "L’account non include credito dei provider. Il professionista configura il servizio e verifica disponibilità, tariffe e quote. La modalità dimostrativa utilizza risposte simulate."
+  },
+  {
+    "key": "t_849fbdde_51",
+    "default": "I profili professionali sono pubblici o verificati?"
+  },
+  {
+    "key": "t_97563d0b_153",
+    "default": "No. Il profilo è privato e la professione è autodichiarata. La registrazione non verifica un’abilitazione professionale e non attribuisce certificazioni."
+  },
+  {
+    "key": "t_3bb02eb4_25",
+    "default": "INFORMAZIONI SULL’ACCOUNT"
+  },
+  {
+    "key": "t_f2d1e336_44",
+    "default": "Uno spazio professionale, con dati separati."
+  },
+  {
+    "key": "t_5627db06_274",
+    "default": "Per creare l’account vengono salvati nome, e-mail usata come codice di accesso, password in forma di hash, professione dichiarata e gli eventuali dati di presentazione. Il profilo non è un elenco pubblico e non è inviato al modello linguistico per il dialogo dello studente."
+  },
+  {
+    "key": "t_67b170d4_302",
+    "default": "L’e-mail non viene verificata e non viene inviata una conferma automatica: conserva le credenziali. Gli account studente vengono creati dal professionista. Per il trattamento dei dati degli studenti il professionista deve configurare le autorizzazioni e le condizioni applicabili alla propria attività."
+  },
+  {
+    "key": "t_c9b04a2a_33",
+    "default": "Riferimenti del modello educativo"
+  },
+  {
+    "key": "t_f79a556c_199",
+    "default": "Zimmerman, B. J. (2002). Becoming a Self-Regulated Learner: An Overview. Theory Into Practice, 41(2), 64–70. Il modello orienta il progetto; la sua citazione non costituisce una validazione di ABLET."
+  },
+  {
+    "key": "t_bbe2f72c_32",
+    "default": "Leggi il riferimento scientifico"
+  },
+  {
+    "key": "t_478b5a4c_37",
+    "default": "Adaptive Based Learning Enhancer Tool"
+  },
+  {
+    "key": "t_99ed34eb_40",
+    "default": "Progetto scientifico: Prof. Angelo Rega."
+  },
+  {
+    "key": "t_96801e2e_16",
+    "default": "Accesso studente"
+  },
+  {
+    "key": "t_271ba010_29",
+    "default": "Accesso educatore / psicologo"
+  },
+  {
+    "key": "t_933bf391_12",
+    "default": "Crea profilo"
+  },
+  {
+    "key": "t_3296f0b4_25",
+    "default": "Informazioni sull’account"
+  },
+  {
+    "key": "t_4ae56af3_11",
+    "default": "Super admin"
+  }
+]

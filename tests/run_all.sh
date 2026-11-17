@@ -17,6 +17,7 @@ APP=http://127.0.0.1:8101 MOCK=http://127.0.0.1:8102 php tests/http.php
 MOCK=http://127.0.0.1:8102 php tests/provider_reliability.php
 
 php tests/accounts.php
+php tests/admin.php
 
 if [[ "${ABLET_STRESS:-0}" == "1" ]]; then
   php bin/migrate.php --fresh >/dev/null

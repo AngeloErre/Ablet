@@ -31,6 +31,7 @@ const ERR = {
   accesso_non_corrispondente: 'Le credenziali appartengono all’altra area. Torna alla scelta dell’accesso e seleziona quella corretta.',
   non_autenticato: 'La sessione è scaduta: accedi di nuovo.', credenziali_non_valide: 'Codice o password non corretti.', troppe_richieste: 'Troppe richieste ravvicinate: riprova fra qualche minuto.',
   profilo_non_valido: 'Controlla nome, professione e lunghezza dei campi.', email_non_valida:'Inserisci un indirizzo e-mail valido.', password_non_valida:'Usa almeno 12 caratteri e una password non eccessivamente lunga.', account_gia_presente:'Questo codice di accesso è già utilizzato. Accedi con il tuo account.', registrazione_disabilitata:'La registrazione non è attiva in questa installazione.', conferma_informazioni_account:'Conferma di aver letto le informazioni sull’account.',
+  chiave_installazione_non_valida:'Chiave di installazione non corretta.', super_admin_gia_presente:'Esiste già un super admin. Usa il suo accesso dedicato.', contenuto_modificato_ricarica:'La bozza è stata modificata da un’altra richiesta. Ricarica prima di salvare.', formato_immagine_non_valido:'Usa un PNG, JPEG o WebP fino a 4096 pixel per lato e 10 milioni di pixel totali.', immagine_non_valida:'Controlla il file, il limite di 2 MB e il testo alternativo.', testo_non_valido:'Uno dei testi non è valido o supera il limite.',
   non_autorizzato: 'Operazione non consentita.', non_trovato: 'Elemento non trovato.', errore_interno: 'Si è verificato un errore. Il lavoro svolto finora è salvato.',
   nessun_protocollo_assegnato: 'Per questa attività non è ancora stato assegnato un protocollo.', autorizzazioni_mancanti: 'Prima di iniziare devono essere registrate alcune autorizzazioni: chiedi al tuo psicologo.', sessione_occupata: 'Sto ancora elaborando la richiesta precedente.',
   tempo_non_valido: 'Indica un numero intero di minuti tra 1 e 600.', tempo_micro_obiettivo_non_valido: 'Puoi impostare da 1 a 600 minuti per passo durante la pianificazione.',
@@ -91,7 +92,7 @@ function topbar() {
 
 function login() {
   const portal = new URLSearchParams(location.search).get('accesso');
-  const role = portal === 'studente' ? 'student' : portal === 'docente' ? 'psychologist' : null;
+  const role = portal === 'studente' ? 'student' : portal === 'docente' ? 'psychologist' : portal === 'admin' ? 'admin' : null;
   const studentLink = `${BASE}/?accesso=studente`, teacherLink = `${BASE}/?accesso=docente`;
   if (new URLSearchParams(location.search).get('registrazione') === 'professionista') { registration(); return; }
   if (!role) { publicHome(); return; }
@@ -100,7 +101,7 @@ function login() {
     e.preventDefault(); err.textContent = '';
     try { const r = await api('POST', '/api/login', { login: f.login.value, password: f.password.value, expected_role: role }); S.csrf = r.csrf; S.user = r.user; boot(); } catch (x) { err.textContent = errText(x); }
   } },
-    h('div', { class: 'brand' }, h('i', { 'aria-hidden': 'true' })), h('h1', {}, role === 'student' ? 'Accesso studente' : 'Accesso docente / psicologo'),
+    h('div', { class: 'brand' }, h('i', { 'aria-hidden': 'true' })), h('h1', {}, role === 'student' ? 'Accesso studente' : role === 'admin' ? 'Accesso super admin' : 'Accesso docente / psicologo'),
     h('p', { class: 'muted' }, 'Uno spazio per organizzare lo studio, un passo alla volta.'),
     h('label', { for: 'login' }, role === 'student' ? 'Codice di accesso' : 'Codice di accesso o e-mail'), h('input', { id: 'login', name: 'login', autocomplete: 'username', required: true, autocapitalize: 'none' }),
     h('label', { for: 'password' }, 'Password'), h('input', { id: 'password', name: 'password', type: 'password', autocomplete: 'current-password', required: true }),
@@ -115,11 +116,12 @@ export async function boot() {
   if(!root)return; // Le pagine diagnostiche importano gli strumenti senza avviare l’app.
   if (!S.csrf || !S.user) { const me = await api('GET', '/api/me'); S.csrf = me.csrf; S.user = me.user; }
   if (!S.user) return login();
+  if(S.user.role==='admin' && new URLSearchParams(location.search).get('preview_home')==='1') return publicHome();
   const main = h('main', { id: 'main', class: 'wrap', tabindex: '-1' });
   // L'interfaccia studente (tablet, voce prima) ha una propria barra essenziale; quella del professionista resta invariata.
   if (S.user.role === 'student') main.className = 'kidroot';
   clear(root).append(S.user.role === 'student' ? null : topbar(), main);
-  const mod = await import(S.user.role === 'student' ? './student.js' : './psy.js');
+  const mod = await import(S.user.role === 'student' ? './student.js' : S.user.role==='admin' && new URLSearchParams(location.search).get('area')!=='professionista' ? './admin.js' : './psy.js');
   mod.mount(main);
 }
 // Installazione come app: l'evento viene conservato e offerto solo nella home dello studente.
@@ -141,7 +143,7 @@ function publicHome() {
     h('div',{class:'site-preview-top'},h('strong',{},'ABLET'),h('span',{},'Prepariamo il piano')),
     h('div',{class:'site-face','aria-hidden':'true'},'◕‿◕'),h('p',{class:'site-bubble'},'Qual è il primo piccolo passo che puoi fare da solo?'),
     h('div',{class:'site-mini-plan'},h('span',{},'IL MIO OBIETTIVO'),h('strong',{},'Capire un testo e raccontarlo con parole mie'),h('div',{class:'site-step'},'01  Leggo un paragrafo'),h('div',{class:'site-step'},'02  Individuo le idee principali')),
-    h('div',{class:'site-preview-controls'},h('span',{},'Pausa'),h('span',{class:'site-mic'},'●  Parla'),h('span',{},'Riascolta'))),phaseFigure=h('figure',{},phasePreview,h('figcaption',{},'Anteprima illustrativa con contenuti sintetici.'));
+    h('div',{class:'site-preview-controls'},h('span',{},'Pausa'),h('span',{class:'site-mic'},'●  Parla'),h('span',{},'Riascolta'))),phaseFigure=h('figure',{'data-home-image':'hero'},phasePreview,h('figcaption',{},'Anteprima illustrativa con contenuti sintetici.'));
   clear(root).append(h('div',{class:'public-site'},
     h('header',{class:'site-header'},h('a',{class:'site-brand',href:`${BASE}/`},h('span',{'aria-hidden':'true'},'a'), 'ABLET'),
       h('nav',{'aria-label':'Scopri ABLET',class:'site-nav'},h('a',{href:'#approccio'},'L’approccio'),h('a',{href:'#strumenti'},'Come funziona'),h('a',{href:'#dashboard'},'Dashboard e dati'),h('a',{href:'#domande'},'Domande')),
@@ -166,12 +168,12 @@ function publicHome() {
     section('dashboard','LA DASHBOARD DEL PROFESSIONISTA','Dai dati del percorso alle domande educative.',
       'La panoramica aiuta psicologi ed educatori a rileggere le sessioni. Puoi filtrare per studente, attività e periodo, quindi aprire una sessione per ricostruire piano, strategie, richieste d’aiuto e dialogo.',
       h('div',{class:'site-grid three'},card('01','Tempi e micro-obiettivi','Confronta il tempo previsto dallo studente con quello registrato nell’app e osserva quanti passi sono stati completati. Il tempo registrato non descrive tutto lo studio svolto su carta o fuori dalla piattaforma.'),card('02','Supporto e strategie','Rileggi indizi richiesti, difficoltà segnalate e adattamenti del supporto. Chiediti quando lo studente cerca aiuto, quali strategie dichiara e che cosa decide di modificare.'),card('03','Previsioni e valutazioni','Quando ci sono dati confrontabili, la calibrazione mette in relazione sicurezza dichiarata e prestazione valutata. Se mancano i dati necessari, il risultato viene indicato come non calcolabile.')),
-      h('figure',{class:'site-dashboard-figure'},h('iframe',{src:`${BASE}/assets/demo/dashboard.html`,title:'Anteprima della dashboard ABLET con dati sintetici',loading:'lazy',sandbox:'',class:'site-dashboard-preview'}),h('figcaption',{},'Anteprima della dashboard prodotta dal renderer di ABLET con tre sessioni simulate. Non è uno screenshot di studenti reali. Scorri nel riquadro per esplorare i grafici.')),
+      h('figure',{class:'site-dashboard-figure','data-home-image':'dashboard'},h('iframe',{src:`${BASE}/assets/demo/dashboard.html`,title:'Anteprima della dashboard ABLET con dati sintetici',loading:'lazy',sandbox:'',class:'site-dashboard-preview'}),h('figcaption',{},'Anteprima della dashboard prodotta dal renderer di ABLET con tre sessioni simulate. Non è uno screenshot di studenti reali. Scorri nel riquadro per esplorare i grafici.')),
       h('div',{class:'site-callout'},h('strong',{},'Un dato suggerisce una domanda, non una diagnosi.'),h('p',{},'Una durata lunga non prova disattenzione, una risposta rapida non prova comprensione, un miglioramento fra sessioni non dimostra da solo efficacia o trasferimento dell’apprendimento. Gli indicatori vanno letti insieme al compito, al contesto e al giudizio professionale.'))),
     section('analisi-dati','ANALISI DEI DATI E DELLE INTERAZIONI','Rileggere il processo, senza ridurlo a un punteggio.',
       'Il dettaglio della sessione affianca tempi, obiettivi, autovalutazioni, valutazioni del professionista, adattamenti e conversazione. Le informazioni osservate, dichiarate dallo studente e valutate dal professionista hanno origini differenti.',
       h('div',{class:'site-grid two'},card('A','Conversazione e codifiche','La conversazione conserva le parole dello studente e i messaggi dell’agente. Le codifiche lessicali o proposte dal modello possono evidenziare segmenti legati al processo SRL: sono proposte da rivedere, non interpretazioni psicologiche definitive.'),card('B','Lettura critica degli indicatori','La polarità lessicale descrive le parole usate, non lo stato emotivo. Le latenze di risposta non misurano attenzione o impegno. I raggruppamenti esplorativi non identificano tipologie diagnostiche di studenti.')),
-      h('figure',{class:'site-dashboard-figure'},h('iframe',{src:`${BASE}/assets/demo/sessione.html#conversazione`,title:'Anteprima del dettaglio sessione e analisi testuale con dati sintetici',loading:'lazy',sandbox:'',class:'site-dashboard-preview'}),h('figcaption',{},'Anteprima del dettaglio sessione: dialogo sintetico e strumenti di revisione delle codifiche. Il codebook iniziale richiede validazione; le analisi automatiche richiedono controllo umano.')),
+      h('figure',{class:'site-dashboard-figure','data-home-image':'analysis'},h('iframe',{src:`${BASE}/assets/demo/sessione.html#conversazione`,title:'Anteprima del dettaglio sessione e analisi testuale con dati sintetici',loading:'lazy',sandbox:'',class:'site-dashboard-preview'}),h('figcaption',{},'Anteprima del dettaglio sessione: dialogo sintetico e strumenti di revisione delle codifiche. Il codebook iniziale richiede validazione; le analisi automatiche richiedono controllo umano.')),
       h('div',{class:'site-grid three'},card('1','Filtra e confronta','Parti da una domanda concreta: la stima dei tempi diventa più aderente? I micro-obiettivi sono sostenibili? In quali momenti viene richiesto un indizio?'),card('2','Apri le evidenze','Rileggi i messaggi e i passaggi del piano che accompagnano l’indicatore. Verifica i dati mancanti e rivedi le annotazioni proposte.'),card('3','Progetta il passo successivo','Usa quanto osservato per scegliere con lo studente una strategia da provare o una modifica al supporto. Gli export permettono ulteriori analisi; non rappresentano una validazione automatica.'))),
     section('inizia','INIZIA CON ABLET','Dal tuo profilo alla prima sessione.',
       'La registrazione è riservata a educatori e psicologi. Gli studenti accedono con le credenziali predisposte dal professionista.',
@@ -191,7 +193,8 @@ function publicHome() {
       h('p',{},'L’e-mail non viene verificata e non viene inviata una conferma automatica: conserva le credenziali. Gli account studente vengono creati dal professionista. Per il trattamento dei dati degli studenti il professionista deve configurare le autorizzazioni e le condizioni applicabili alla propria attività.'),
       h('details',{},h('summary',{},'Riferimenti del modello educativo'),h('p',{},'Zimmerman, B. J. (2002). Becoming a Self-Regulated Learner: An Overview. Theory Into Practice, 41(2), 64–70. Il modello orienta il progetto; la sua citazione non costituisce una validazione di ABLET.'),h('a',{href:'https://doi.org/10.1207/s15430421tip4102_2',target:'_blank',rel:'noopener'},'Leggi il riferimento scientifico')))),
     h('footer',{class:'site-footer'},h('div',{},h('strong',{},'ABLET'),h('p',{},'Adaptive Based Learning Enhancer Tool'),h('p',{},'Progetto scientifico: Prof. Angelo Rega.')),
-      h('div',{},h('a',{href:student},'Accesso studente'),h('a',{href:professional},'Accesso educatore / psicologo'),h('a',{href:register},'Crea profilo'),h('a',{href:'#account-data'},'Informazioni sull’account')))));
+      h('div',{},h('a',{href:student},'Accesso studente'),h('a',{href:professional},'Accesso educatore / psicologo'),h('a',{href:register},'Crea profilo'),h('a',{href:'#account-data'},'Informazioni sull’account'),h('a',{href:`${BASE}/?accesso=admin`},'Super admin')))));
+  hydrateHome(root);
   if(location.hash && /^#[a-z-]+$/.test(location.hash)) document.getElementById(location.hash.slice(1))?.scrollIntoView?.();
 }
 function registration() {
@@ -210,4 +213,19 @@ function registration() {
     h('p',{class:'small muted'},'Non viene inviata un’e-mail di conferma. Conserva le credenziali. Nessun credito AI è incluso nella registrazione.'),status,submit,
     h('p',{},h('a',{href:`${BASE}/?accesso=docente`},'Ho già un account → Accedi')),h('p',{},h('a',{href:`${BASE}/`},'← Torna alla homepage')));
   clear(root).append(h('main',{id:'main',class:'signup-page'},form));
+}
+
+// Chiavi stabili del catalogo pubblico. I contenuti ricevuti non vengono interpretati come HTML.
+function homeTextKey(text) { let n=2166136261;for(let i=0;i<text.length;i++){n^=text.charCodeAt(i);n=Math.imul(n,16777619);}return 't_'+(n>>>0).toString(16)+'_'+text.length; }
+async function hydrateHome(container) {
+  const site=container.querySelector?.('.public-site') || container;
+  try {
+    const preview=S.user?.role==='admin' && new URLSearchParams(location.search).get('preview_home')==='1';
+    const r=await api('GET',preview?'/api/admin/home':'/api/site/home'),content=(preview?r.draft:r.content)||{};
+    const visit=node=>{if(node.nodeType===3){const original=node.nodeValue||'',text=original.trim(),value=content.texts?.[homeTextKey(text)];if(typeof value==='string')node.nodeValue=original.replace(text,value);}else for(const child of Array.from(node.childNodes||[]))visit(child);};if(site.isConnected===false)return;visit(site);
+    for(const slot of ['hero','dashboard','analysis']){
+      const item=content.images?.[slot],figure=site.querySelector?.(`[data-home-image="${slot}"]`);
+      if(figure && item && /^[a-f0-9]{64}$/.test(item.id))figure.replaceChildren(h('img',{src:`${BASE}/api/site/media/${item.id}`,alt:item.alt||'',loading:'lazy',class:'site-managed-image'}),h('figcaption',{},item.caption||''));
+    }
+  } catch { /* I contenuti originali restano leggibili se il servizio editoriale non è disponibile. */ }
 }

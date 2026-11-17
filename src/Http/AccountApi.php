@@ -12,7 +12,7 @@ final class AccountApi
         App::route('GET','/api/psy/account',[self::class,'profile'],'psychologist');
         App::route('PUT','/api/psy/account',[self::class,'save'],'psychologist');
     }
-    private static function validated(array $in):array
+    public static function validated(array $in):array
     {
         foreach (['full_name','profession','organization','biography'] as $key) {
             if (isset($in[$key]) && !is_string($in[$key])) throw new ApiError(422,'profilo_non_valido');

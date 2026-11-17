@@ -1,5 +1,5 @@
 // ABLET — area del professionista: panoramica e analisi, studenti, configuratore dei protocolli, attività, provider, voce e avatar.
-import { BASE, api, h, clear, toast, guard, errText } from './app.js';
+import { S, boot, BASE, api, h, clear, toast, guard, errText } from './app.js';
 import { barChart, heatmap, downloadJson, downloadText } from './charts.js';
 import { createVoice, avatar, voiceNames, voiceSupport, VOICE_NOTICE } from './voice.js';
 
@@ -544,5 +544,7 @@ async function account() {
   const status=h('p',{role:'status'}),save=h('button',{type:'submit',class:'primary'},'Salva profilo');
   const form=h('form',{class:'card',onsubmit:async e=>{e.preventDefault();save.disabled=true;status.textContent='';try{await api('PUT','/api/psy/account',{full_name:name.value,profession:profession.value,organization:organization.value,biography:biography.value});status.textContent='Profilo aggiornato. Il nome nella barra si aggiornerà al prossimo accesso.';}catch(x){status.textContent=errText(x);}finally{save.disabled=false;}}},
     field('Nome e cognome',name),field('Professione dichiarata',profession),field('Organizzazione (facoltativa)',organization),field('Presentazione professionale (facoltativa)',biography),status,save);
-  clear(view).append(h('h1',{},'Il mio profilo'),h('p',{},'Il profilo è privato e appartiene al tuo account. Non viene pubblicato in un elenco di professionisti. La qualifica è autodichiarata e non verificata da ABLET.'),h('p',{class:'small muted'},'Codice di accesso: '+r.login),form);
+  clear(view).append(h('h1',{},'Il mio profilo'),h('p',{},'Il profilo è privato e appartiene al tuo account. Non viene pubblicato in un elenco di professionisti. La qualifica è autodichiarata e non verificata da ABLET.'),h('p',{class:'small muted'},'Codice di accesso: '+r.login),form,
+    h('details',{class:'card'},h('summary',{},'Attivazione del primo super admin · titolare dell’installazione'),h('p',{},'Richiede la chiave INSTALL_KEY di config.php. Disponibile soltanto finché non esiste un amministratore. Il tuo account conserva il proprio spazio professionale.'),
+      (()=>{const key=h('input',{type:'password',autocomplete:'off','aria-label':'Chiave di installazione'});return h('form',{onsubmit:async e=>{e.preventDefault();try{await api('POST','/api/psy/activate-admin',{owner_key:key.value});S.user=null;await boot();}catch(x){toast(errText(x));}finally{key.value='';}}},key,h('button',{type:'submit'},'Attiva il mio account come super admin'));})()));
 }

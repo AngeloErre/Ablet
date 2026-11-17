@@ -18,7 +18,7 @@ check('La home propone due link di accesso distinti',links.some(e=>e.attrs.href=
 check('Link studente corretto',links.some(e=>e.attrs.href==='/ablet/?accesso=studente'&&text(e).includes('Accedi come studente')));
 check('Link docente corretto',links.some(e=>e.attrs.href==='/ablet/?accesso=docente'&&text(e).includes('educatore / psicologo')));
 check('La home non chiede credenziali prima della scelta',!home.some(e=>e.tag==='input'));
-for (const [portal,label] of [['studente','Accesso studente'],['docente','Accesso docente / psicologo']]){
+for (const [portal,label] of [['studente','Accesso studente'],['docente','Accesso docente / psicologo'],['admin','Accesso super admin']]){
  const elements=render('?accesso='+portal);
  check('Titolo della pagina '+portal,elements.some(e=>e.tag==='h1'&&text(e)===label));
  check('Modulo credenziali presente per '+portal,elements.filter(e=>e.tag==='input').length===2);

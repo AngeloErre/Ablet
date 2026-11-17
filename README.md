@@ -3,9 +3,21 @@
 Piattaforma web in italiano per sostenere l'autoregolazione dell'apprendimento con un agente pedagogico conversazionale.
 Committente scientifico: Prof. Angelo Rega.
 
-**Stato: MVP con modalità Attività libera (aggiornamento 0.9.1).** Frontend HTML/CSS/JavaScript senza dipendenze, backend PHP, database MySQL/MariaDB.
+**Stato: MVP con modalità Attività libera (aggiornamento 0.10.0).** Frontend HTML/CSS/JavaScript senza dipendenze, backend PHP, database MySQL/MariaDB.
 
 > La riuscita tecnica dell'MVP non equivale alla sua validazione scientifica: soglie, livelli di supporto, codebook e lessico di polarità sono parametri progettuali da validare.
+
+## Versione 0.10.0 — area super admin
+
+Accesso dedicato `?accesso=admin` e collegamento nel footer. Gestione dei professionisti: ricerca paginata, creazione, modifica profilo/codice di accesso, sospensione/riattivazione e reset password con revoca delle sessioni. Nessuna cancellazione fisica di studenti o sessioni. La sospensione del professionista non sospende automaticamente i suoi account studente.
+
+Editor della homepage: catalogo dei testi, tre slot per immagini PNG/JPEG/WebP (2 MB), testo alternativo, bozze, anteprima autenticata, pubblicazione e ripristino delle versioni pubblicate in bozza. I contenuti pubblici non includono le bozze e i testi non vengono interpretati come HTML.
+
+**Prima attivazione senza SSH:** dopo l’aggiornamento, entra con il tuo account professionale → Impostazioni applicazione → Il mio profilo → Attivazione del primo super admin. Inserisci la chiave INSTALL_KEY di config.php. L’operazione è disponibile soltanto se non esiste già un admin. Le credenziali rimangono le stesse e il tuo spazio professionale resta raggiungibile dall’area admin. Alternativa CLI: `php bin/create_user.php admin <login>`.
+
+**Database obbligatorio:** applicare **011_super_admin.sql** dall’installatore senza reinstallare. Aggiunge contenuti/versioni/media e il contatore di revoca delle sessioni; non promuove automaticamente nessuno. Conservare config.php, .env e storage/, eliminare nuovamente public/install.php e aprire refresh.php.
+
+Guida: [docs/SUPER_ADMIN.md](docs/SUPER_ADMIN.md).
 
 ## Versione 0.9.1 — dashboard e analisi nella homepage
 
