@@ -44,3 +44,13 @@ Nessuna reinstallazione e nessun azzeramento del database reale.
 - Migrazione 009→010 verificata con quattro controlli: sola migrazione prevista, credenziali/ruoli preservati, nessun profilo preesistente inventato e riesecuzione senza modifiche.
 
 Le prove non includono invio di e-mail, browser fisici o pubblicazione su Aruba. Il codice e il pacchetto aggiornati non modificano da soli il sito di produzione.
+
+## Dashboard nella homepage — 0.9.1
+
+La homepage presenta ora panoramica, filtri e dettaglio di sessione, distinguendo dati osservati, dichiarati e valutati. Spiega tempi, obiettivi, richieste d’aiuto, calibrazione, conversazione, codifiche, polarità lessicale e clustering esplorativo, con i limiti delle interpretazioni.
+
+Due iframe sandbox mostrano pagine statiche generate dal codice effettivo di app.js, charts.js e psy.js: dashboard e dettaglio sessione. I dati provengono dai profili sintetici collaborativo, stallo e richiesta della soluzione. Non si accede a sessioni reali o a provider esterni. Nessuno script è incluso nelle anteprime; i comandi di modifica sono disattivati. Gli iframe sono caricati soltanto quando prossimi alla visualizzazione.
+
+Non sono screenshot: il browser ha rifiutato l’accesso al file locale per l’acquisizione. Le anteprime non vengono spacciate per catture del sito in produzione. Le verifiche di struttura e sintassi sono passate, ma non è stato completato un controllo visivo nel browser di tali anteprime.
+
+Verifica mirata: 18 controlli DOM su homepage/accessi, 28 UI professionista, 32 flusso studente, 34 audio browser, 18 audio server e 12 cache, tutti superati. Le pagine delle anteprime sono state controllate per assenza di script e presenza dell’etichetta dati sintetici. Nessuna nuova migrazione oltre la 010.

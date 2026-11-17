@@ -3,9 +3,15 @@
 Piattaforma web in italiano per sostenere l'autoregolazione dell'apprendimento con un agente pedagogico conversazionale.
 Committente scientifico: Prof. Angelo Rega.
 
-**Stato: MVP con modalità Attività libera (aggiornamento 0.9.0).** Frontend HTML/CSS/JavaScript senza dipendenze, backend PHP, database MySQL/MariaDB.
+**Stato: MVP con modalità Attività libera (aggiornamento 0.9.1).** Frontend HTML/CSS/JavaScript senza dipendenze, backend PHP, database MySQL/MariaDB.
 
 > La riuscita tecnica dell'MVP non equivale alla sua validazione scientifica: soglie, livelli di supporto, codebook e lessico di polarità sono parametri progettuali da validare.
+
+## Versione 0.9.1 — dashboard e analisi nella homepage
+
+Nuove sezioni pubbliche spiegano filtri, tempi, obiettivi, richieste d’aiuto, strategie, calibrazione, codifiche e limiti interpretativi degli indicatori. Due anteprime consultabili usano lo stesso renderer dell’interfaccia professionale con dati sintetici; sono pagine statiche isolate in iframe sandbox, senza sessioni autenticate, script o comandi di modifica. Non vengono presentate come screenshot: la cattura della versione locale è stata impedita dalle restrizioni del browser. Nessun dato reale degli studenti è incluso.
+
+Nessuna migrazione aggiuntiva rispetto alla 0.9.0 (010). Conservare config.php, .env e storage/, poi aprire refresh.php.
 
 ## Versione 0.9.0 — sito pubblico e registrazione professionale
 

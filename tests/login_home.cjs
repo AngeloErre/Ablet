@@ -30,4 +30,7 @@ check('Le anteprime sono dichiarate illustrative',home.some(e=>e.tag==='figcapti
 const signup=render('?registrazione=professionista');
 check('Modulo registrazione presente',signup.some(e=>e.tag==='form')&&signup.some(e=>e.tag==='input'&&e.attrs.type==='email'));
 check('Registrazione richiede conferma delle informazioni',signup.some(e=>e.tag==='input'&&e.attrs.type==='checkbox'&&Object.hasOwn(e.attrs,'required')));
+check('Homepage spiega dashboard e limiti dei dati',home.some(e=>e.attrs.id==='dashboard')&&home.some(e=>e.attrs.id==='analisi-dati'));
+check('Due anteprime isolate con dati sintetici',home.filter(e=>e.tag==='iframe'&&e.attrs.sandbox==='').length===2);
+check('Il menu collega alla dashboard',links.some(e=>e.attrs.href==='#dashboard'));
 console.log(`Superati: ${pass}`);
