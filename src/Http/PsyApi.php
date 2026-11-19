@@ -542,8 +542,19 @@ final class PsyApi
             $minutes=$in['expected_minutes'] ?? $old['expected_minutes'];
             if ($minutes === '' || $minutes === 0 || $minutes === null) { $minutes=null; }
             elseif (filter_var($minutes,FILTER_VALIDATE_INT) === false || (int)$minutes<1 || (int)$minutes>600) { throw new ApiError(422, 'tempo_non_valido'); }
-            $snapshot=json_encode(['a_title'=>$old['title'],'assignment_text'=>$old['assignment_text'],'completion_criteria'=>$old['completion_criteria'],'expected_minutes'=>$old['expected_minutes']],JSON_UNESCAPED_UNICODE);
-            $pdo->prepare("UPDATE sessions SET srl_data=JSON_SET(srl_data,'$._activity_snapshot',JSON_EXTRACT(?,'$')) WHERE activity_id=? AND JSON_EXTRACT(srl_data,'$._activity_snapshot') IS NULL")->execute([$snapshot,(int)$a['id']]);
+            $snapshot=['a_title'=>$old['title'],'assignment_text'=>$old['assignment_text'],'completion_criteria'=>$old['completion_criteria'],'expected_minutes'=>$old['expected_minutes']];
+            // Anche MySQL 5.6: lo schema usa LONGTEXT e non dispone di JSON_SET/JSON_EXTRACT.
+            // Bloccare e leggere lo stato corrente evita di perdere slot scritti da un turno concorrente.
+            $sessions=$pdo->prepare('SELECT id,srl_data FROM sessions WHERE activity_id=? ORDER BY id FOR UPDATE');
+            $sessions->execute([(int)$a['id']]);
+            $saveSnapshot=$pdo->prepare('UPDATE sessions SET srl_data=? WHERE id=?');
+            foreach ($sessions->fetchAll() as $session) {
+                $srl=json_decode($session['srl_data'],true,512,JSON_THROW_ON_ERROR);
+                if (!is_array($srl)) { throw new \DomainException('dati_sessione_non_validi'); }
+                if (isset($srl['_activity_snapshot'])) { continue; }
+                $srl['_activity_snapshot']=$snapshot;
+                $saveSnapshot->execute([json_encode($srl,JSON_UNESCAPED_UNICODE|JSON_THROW_ON_ERROR),(int)$session['id']]);
+            }
             $pdo->prepare('UPDATE activities SET title=?,assignment_text=?,completion_criteria=?,expected_minutes=? WHERE id=? AND owner_id=?')->execute([$title,$text,mb_substr((string)($in['completion_criteria'] ?? $old['completion_criteria'] ?? ''),0,2000) ?: null,$minutes,(int)$a['id'],self::me()]);
         });
         App::audit('activity_updated','activities',(int)$a['id']);

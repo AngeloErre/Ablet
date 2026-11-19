@@ -3,9 +3,17 @@
 Piattaforma web in italiano per sostenere l'autoregolazione dell'apprendimento con un agente pedagogico conversazionale.
 Committente scientifico: Prof. Angelo Rega.
 
-**Stato: MVP con modalità Attività libera (aggiornamento 0.12.0).** Frontend HTML/CSS/JavaScript senza dipendenze, backend PHP, database MySQL/MariaDB.
+**Stato: MVP con modalità Attività libera (aggiornamento 0.12.1).** Frontend HTML/CSS/JavaScript senza dipendenze, backend PHP, database MySQL/MariaDB.
 
 > La riuscita tecnica dell'MVP non equivale alla sua validazione scientifica: soglie, livelli di supporto, codebook e lessico di polarità sono parametri progettuali da validare.
+
+## Versione 0.12.1 — salvataggio delle attività libere su hosting compatibili con MySQL 5.6
+
+Rimosse dal salvataggio le chiamate SQL JSON_SET/JSON_EXTRACT, non disponibili in MySQL 5.6. Le caratteristiche precedenti delle sessioni vengono conservate con lettura e scrittura JSON in PHP, dentro la stessa transazione e con blocco delle righe. Assegnazioni, stato, versione del protocollo e informazioni dello studente restano conservati; i salvataggi successivi non sovrascrivono lo storico.
+
+Test dedicato: `php tests/activity_edit_http.php`, integrato in `tests/run_all.sh`: 21 controlli su salvataggio, storico, campi facoltativi, validazione e autorizzazioni. Verifica eseguita su MariaDB con schema LONGTEXT di compatibilità MySQL 5.6, non su un server MySQL 5.6 originale. La causa dell’errore nella singola installazione va confermata dal messaggio o log del server.
+
+**Nessuna migrazione e nessuna modifica alla UI.** Per la sola correzione sostituire `src/Http/PsyApi.php`, conservando le configurazioni e i dati. In alternativa caricare il pacchetto completo conservando `config.php`, `.env` e `storage/`, quindi aprire `refresh.php`.
 
 ## Versione 0.12.0 — monitoraggio token
 

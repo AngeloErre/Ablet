@@ -15,6 +15,7 @@ php -S 127.0.0.1:8102 tests/mock_llm.php >/tmp/ablet_mock.log 2>&1 & MOCK_PID=$!
 trap 'pkill -P $APP_PID 2>/dev/null || true; kill $APP_PID $MOCK_PID 2>/dev/null || true; rm -f "$PASSWORD_RESET_TEST_OUTBOX"' EXIT
 sleep 1
 APP=http://127.0.0.1:8101 MOCK=http://127.0.0.1:8102 php tests/http.php
+php tests/activity_edit_http.php
 
 MOCK=http://127.0.0.1:8102 php tests/provider_reliability.php
 
