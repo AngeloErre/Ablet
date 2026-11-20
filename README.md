@@ -3,9 +3,23 @@
 Piattaforma web in italiano per sostenere l'autoregolazione dell'apprendimento con un agente pedagogico conversazionale.
 Committente scientifico: Prof. Angelo Rega.
 
-**Stato: MVP con modalità Attività libera (aggiornamento 0.13.0).** Frontend HTML/CSS/JavaScript senza dipendenze, backend PHP, database MySQL/MariaDB.
+**Stato: MVP con modalità Attività libera (aggiornamento 0.14.0).** Frontend HTML/CSS/JavaScript senza dipendenze, backend PHP, database MySQL/MariaDB.
 
 > La riuscita tecnica dell'MVP non equivale alla sua validazione scientifica: soglie, livelli di supporto, codebook e lessico di polarità sono parametri progettuali da validare.
+
+## Versione 0.14.0 — accesso con il solo PIN
+
+Studenti e professionisti possono accedere digitando **soltanto un PIN di 6 cifre**, univoco per installazione (anche con zeri iniziali). La schermata propone il PIN e mantiene il pulsante per codice/e-mail e password. Il Super admin usa la password.
+
+- Professionista: accedere con password, poi **Impostazioni applicazione → Il mio profilo → Accesso con il solo PIN**. Confermare la password per generare o disattivare il PIN.
+- Studente: nella sezione **Studenti**, premere **Genera nuovo PIN** e comunicarlo privatamente allo studente. Il professionista può rigenerarlo se smarrito o disattivarlo.
+- Il PIN compare una sola volta e non può essere riletto. Generarlo di nuovo sostituisce quello precedente. La password resta disponibile. I reset password invalidano PIN e sessioni precedenti tramite session_version; sospensioni e account amministrativi non consentono accesso PIN.
+
+**Aggiornamento database necessario:** conservare `config.php`, `.env` e `storage/`, caricare il pacchetto e applicare la migrazione **013_pin_access** da `install.php` con la chiave di installazione, oppure `php bin/migrate.php`. Poi aprire `refresh.php`. Non usare `--fresh` su dati reali. Nessun PIN viene attivato automaticamente per gli account esistenti.
+
+La chiave `APP_SECRET_KEY` deve restare stabile: il lookup è un HMAC distinto per dominio e la verifica usa password_hash/password_verify. Il database non conserva PIN in chiaro; l'indice univoco previene collisioni fra account. HTTPS necessario in produzione. Un PIN ha meno entropia di una password: chi lo conosce accede all'account. Limiti condivisi fra portali: 5 tentativi per IP in 10 minuti e 100 globali in 10 minuti (includono gli accessi riusciti); NAT condivisi e molti accessi simultanei possono richiedere attesa. Rigenerare/disattivare il PIN blocca i nuovi accessi con quel codice; le sessioni già aperte restano attive fino a logout, scadenza o reset password. Non conservare né inviare PIN in URL, log o archiviazione browser.
+
+Verifica dedicata: `php tests/pin_access.php`, integrata nella suite HTTP.
 
 ## Versione 0.13.0 — configurazione guidata dell’assistente IA
 

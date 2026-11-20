@@ -35,6 +35,8 @@ final class PsyApi
         $r('POST', '/students/{id}/plan-steps/{step}/skip', 'plansSkip');
         $r('POST', '/students', 'studentCreate');
         $r('POST', '/students/{id}/reset', 'studentReset');
+        $r('POST', '/students/{id}/pin', 'studentPin');
+        $r('DELETE', '/students/{id}/pin', 'studentPinDelete');
         $r('PUT', '/students/{id}/profile', 'studentProfile');
         $r('PUT', '/students/{id}/model', 'studentModel');
         $r('GET', '/students/{id}/export', 'studentExport');
@@ -185,11 +187,20 @@ final class PsyApi
         return ['id' => $id, 'login' => $login, 'password' => $pw, 'note' => 'Credenziali mostrate una sola volta.'];
     }
 
+    public static function studentPin(array $a): array
+    {
+        $s=self::own('student',(int)$a['id']);App::rateLimit('student-pin:'.self::me(),30,600);
+        $r=\Ablet\Service\AccessPin::issue((int)$s['id']);App::audit('pin_generated','users',(int)$s['id']);return $r;
+    }
+    public static function studentPinDelete(array $a): array
+    {
+        $s=self::own('student',(int)$a['id']);\Ablet\Service\AccessPin::revoke((int)$s['id']);App::audit('pin_revoked','users',(int)$s['id']);return ['ok'=>true];
+    }
     public static function studentReset(array $a): array
     {
         $s = self::own('student', (int)$a['id']);
         $pw = Ids::pseudonym(10);
-        Database::pdo()->prepare('UPDATE users SET password_hash = ? WHERE id = ?')->execute([password_hash($pw, PASSWORD_DEFAULT), $s['id']]);
+        Database::pdo()->prepare('UPDATE users SET password_hash = ?, session_version=session_version+1 WHERE id = ?')->execute([password_hash($pw, PASSWORD_DEFAULT), $s['id']]);
         App::audit('student_password_reset', 'users', (int)$s['id']);
         return ['login' => $s['login'], 'password' => $pw];
     }
