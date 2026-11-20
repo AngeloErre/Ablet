@@ -3,9 +3,17 @@
 Piattaforma web in italiano per sostenere l'autoregolazione dell'apprendimento con un agente pedagogico conversazionale.
 Committente scientifico: Prof. Angelo Rega.
 
-**Stato: MVP con modalità Attività libera (aggiornamento 0.15.0).** Frontend HTML/CSS/JavaScript senza dipendenze, backend PHP, database MySQL/MariaDB.
+**Stato: MVP con modalità Attività libera (aggiornamento 0.15.1).** Frontend HTML/CSS/JavaScript senza dipendenze, backend PHP, database MySQL/MariaDB.
 
 > La riuscita tecnica dell'MVP non equivale alla sua validazione scientifica: soglie, livelli di supporto, codebook e lessico di polarità sono parametri progettuali da validare.
+
+## Versione 0.15.1 — debug e correzioni
+
+Corretto l'accesso alle API vocali dal workspace professionale del Super admin, incluse le anteprime; gli studenti conservano controlli su titolarità, modalità e autorizzazioni. I campi testuali di login, messaggi, azioni, credenziali provider e audio rifiutano strutture JSON improprie invece di convertirle in `Array`. I filtri API rifiutano array e byte nulli; la dashboard valida date reali e ordine dell'intervallo.
+
+Il tetto mensile dei provider viene validato entro il limite SQL di 4.294.967.295 token, coerentemente anche nel wizard. Un salvataggio non valido non azzera più la configurazione predefinita: le scritture avvengono in transazione, serializzate per professionista. `ApiError` dispone del proprio file per l'autoload anche nei servizi richiamati da CLI. Aggiornate le verifiche delle migrazioni pregresse e aggiunto un controllo della configurazione effettiva prima che le suite distruttive possano azzerare uno schema: solo `APP_ENV=development` e un nome database contenente `test`.
+
+**Nessuna nuova migrazione rispetto a 0.15.0.** Caricare i file conservando `config.php`, `.env` e `storage/`, quindi aprire `refresh.php`. Chi proviene da versioni precedenti deve comunque applicare le migrazioni mancanti fino alla 014. Il dettaglio delle prove e dei limiti è in **DEBUG_REPORT.md**. Nuove regressioni: `tests/debug_regressions.php` e `tests/input_validation.php`; integrate nella suite principale.
 
 ## Versione 0.15.0 — memoria longitudinale compatta
 

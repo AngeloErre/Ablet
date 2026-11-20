@@ -147,7 +147,7 @@ final class StudentApi
     {
         $sid = self::resolve($a['pid']);
         $in = App::input();
-        $text = trim((string)($in['text'] ?? ''));
+        $text = trim(App::text($in,'text'));
         if ($text === '' || mb_strlen($text) > 2000) { throw new ApiError(422, 'messaggio_non_valido'); }
         App::rateLimit("msg:$sid", 30, 300);
         $r = TurnService::studentMessage($sid, $text, ($in['modality'] ?? 'text') === 'voice' ? 'voice' : 'text', self::cid($in));
@@ -159,7 +159,7 @@ final class StudentApi
         $sid = self::resolve($a['pid']);
         $in = App::input();
         App::rateLimit("act:$sid", 60, 300);
-        $r = TurnService::action($sid, (string)($in['action'] ?? ''), is_array($in['payload'] ?? null) ? $in['payload'] : [], self::cid($in));
+        $r = TurnService::action($sid, App::text($in,'action'), is_array($in['payload'] ?? null) ? $in['payload'] : [], self::cid($in));
         return ['notice' => $r['notice'], 'session' => SessionView::forStudent($sid)];
     }
 

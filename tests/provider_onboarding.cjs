@@ -48,7 +48,7 @@ ctx.api=async(method,url,body)=>{
   ck(key+': nessun modello suggerito se assente dalla risposta',select.children.filter(e=>e.tag==='option').every(e=>!e.value||modelList.includes(e.value)));
   select.events.change({target:{value:candidate}});
   if(key==='gemini'){
-   const cap=byLabel('Tetto mensile locale di token');cap.value='-1';cap.events.input({target:cap});await click('Salva modello e continua');ck('Tetto locale invalido mantiene il passo modello',!!byLabel('Modello IA'));cap.value='10000';cap.events.input({target:cap});
+   const cap=byLabel('Tetto mensile locale di token');cap.value='-1';cap.events.input({target:cap});await click('Salva modello e continua');ck('Tetto locale invalido mantiene il passo modello',!!byLabel('Modello IA'));cap.value='4294967296';cap.events.input({target:cap});await click('Salva modello e continua');ck('Tetto oltre il massimo database respinto prima del salvataggio',!!byLabel('Modello IA'));cap.value='10000';cap.events.input({target:cap});
   }
   await click('Salva modello e continua');ck(key+': attivazione impedita prima della prova',button('Attiva per il mio spazio').disabled);
   if(key==='gemini'){

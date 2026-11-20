@@ -648,6 +648,10 @@ final class PsyApi
     public static function providerSave(): array
     {
         $in = App::input();
+        foreach(['provider_key','base_url','model_name','api_key','label'] as $field)if(isset($in[$field]))App::text($in,$field);
+        $limit=$in['monthly_token_limit']??0;
+        if($limit==='')$limit=0;
+        if(!is_numeric($limit)||(float)$limit<0||(float)$limit>4294967295||floor((float)$limit)!=(float)$limit)throw new ApiError(422,'limite_token_non_valido');
         $key = (string)($in['provider_key'] ?? '');
         if (!in_array($key, ['demo', 'gemini', 'openai', 'anthropic', 'deepseek', 'openai_compatible'], true)) { throw new ApiError(422, 'provider_sconosciuto'); }
         $base = trim((string)($in['base_url'] ?? '')) ?: null;
@@ -665,7 +669,10 @@ final class PsyApi
         }
         $params = array_intersect_key((array)($in['params'] ?? []), ['token_param' => 1, 'response_format' => 1]);
         $vals = [$key, mb_substr(trim((string)($in['label'] ?? $key)), 0, 80) ?: $key, $base, mb_substr(trim((string)($in['model_name'] ?? '')), 0, 120) ?: null, $enc, $last4, json_encode($params ?: new \stdClass()),
-            ($in['monthly_token_limit'] ?? 0) > 0 ? (int)$in['monthly_token_limit'] : null, max(3, min(120, (int)($in['timeout_s'] ?? 30))), max(0, min(3, (int)($in['max_retries'] ?? 1))), $fb, (int)!empty($in['is_default'])];
+            $limit > 0 ? (int)$limit : null, max(3, min(120, (int)($in['timeout_s'] ?? 30))), max(0, min(3, (int)($in['max_retries'] ?? 1))), $fb, (int)!empty($in['is_default'])];
+        $id=Database::transaction(static function($pdo)use($in,$existing,$vals,$key,$base,$apiKey):int{
+            // Un solo salvataggio del predefinito per professionista, con rollback completo.
+            $lock=$pdo->prepare('SELECT id FROM users WHERE id=? FOR UPDATE');$lock->execute([self::me()]);
         if (!empty($in['is_default'])) { $pdo->prepare('UPDATE provider_configs SET is_default = 0 WHERE owner_id = ?')->execute([self::me()]); }
         if ($existing) {
             $pdo->prepare('UPDATE provider_configs SET provider_key=?, label=?, base_url=?, model_name=?, api_key_enc=?, key_last4=?, params=?, monthly_token_limit=?, timeout_s=?, max_retries=?, fallback_config_id=?, is_default=? WHERE id=?')
@@ -679,6 +686,8 @@ final class PsyApi
                 ->execute(array_merge($vals, [self::me()]));
             $id = (int)$pdo->lastInsertId();
         }
+            return $id;
+        });
         App::audit('provider_saved', 'provider_configs', $id, ['provider_key' => $key, 'key_changed' => $apiKey !== '']); // mai la chiave
         return ['provider' => self::providerPublic(self::own('provider', $id))];
     }
@@ -749,9 +758,14 @@ final class PsyApi
         foreach (['student_id' => 's.student_id = ?', 'activity_id' => 's.activity_id = ?'] as $k => $c) {
             if (!empty($_GET[$k])) { $w[] = $c; $args[] = (int)$_GET[$k]; }
         }
+        $range=[];
         foreach (['from' => 's.created_at >= ?', 'to' => 's.created_at < DATE_ADD(?, INTERVAL 1 DAY)'] as $k => $c) {
-            if (!empty($_GET[$k]) && preg_match('/^\d{4}-\d{2}-\d{2}$/', $_GET[$k])) { $w[] = $c; $args[] = $_GET[$k]; }
+            $date=App::text($_GET,$k);
+            if($date==='')continue;
+            if(!preg_match('/^[0-9]{4}-[0-9]{2}-[0-9]{2}$/D',$date)||!checkdate((int)substr($date,5,2),(int)substr($date,8,2),(int)substr($date,0,4)))throw new ApiError(422,'periodo_non_valido');
+            $range[$k]=$date;$w[]=$c;$args[]=$date;
         }
+        if(isset($range['from'],$range['to'])&&$range['from']>$range['to'])throw new ApiError(422,'periodo_non_valido');
         $ids = array_map('intval', array_column(self::rows('SELECT s.id FROM sessions s JOIN activities a ON a.id = s.activity_id WHERE ' . implode(' AND ', $w) . ' ORDER BY s.id DESC LIMIT 150', $args), 'id'));
         return Indicators::overview(array_reverse($ids), max(2, min(6, (int)($_GET['k'] ?? 3))));
     }
