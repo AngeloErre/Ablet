@@ -8,7 +8,7 @@ let dirty = false, navigationCleanup = () => {};
 const leaveEditor = () => !dirty || confirm('Ci sono modifiche non salvate. Uscire senza salvarle?');
 addEventListener('beforeunload', e => { if (dirty) { e.preventDefault(); e.returnValue = ''; } });
 const TABS = [['dash','Panoramica'],['tokens','Consumi token'],['students','Studenti'],['protocols','Protocolli'],['activities','Attività'],['manual','Manuale e tutorial']];
-const SETTINGS = [['account','Il mio profilo'],['providers','Provider'],['voice','Voce e avatar'],['coding','Validazione codifiche'],['privacy','Dati e autorizzazioni']];
+const SETTINGS = [['account','Il mio profilo'],['providers','Assistente IA'],['voice','Voce e avatar'],['coding','Validazione codifiche'],['privacy','Dati e autorizzazioni']];
 const STATE = { created: 'Non avviata', forethought: 'Pianificazione', performance: 'Lavoro', self_reflection: 'Riflessione', paused: 'In pausa', safety_hold: 'Sospensione di sicurezza', closed_complete: 'Conclusa', closed_incomplete: 'Chiusa incompleta' };
 const LEVELS = ['0 · autonomo con checkpoint essenziali', '1 · supporto su richiesta', '2 · guida condivisa', '3 · guida strutturata'];
 const nd = (v, u = '') => v == null ? 'non calcolabile' : `${v}${u}`;
@@ -31,7 +31,7 @@ export async function mount(el) {
   // Su dispositivi piccoli il menu parte chiuso; il contenuto resta raggiungibile senza overlay.
   if (typeof matchMedia === 'function') { const narrow=matchMedia('(max-width: 63.99rem)'); menu.open=!narrow.matches; const adapt=()=>{menu.open=!narrow.matches;}; narrow.addEventListener?.('change',adapt); navigationCleanup=()=>narrow.removeEventListener?.('change',adapt); }
   clear(main).append(h('div',{class:'professional-layout'},menu, view));
-  ({ dash, tokens, students, protocols, activities, providers, voice, coding, privacy, manual, account })[tab]().catch(e => toast(errText(e)));
+  await ({ dash, tokens, students, protocols, activities, providers, voice, coding, privacy, manual, account })[tab]().catch(e => toast(errText(e)));
 }
 
 // ───────────────────────── monitoraggio token
@@ -73,7 +73,7 @@ async function dash(q = {}) {
   const kpi = (t, v, sub) => h('div', { class: 'card' }, h('div', { class: 'small muted' }, t), h('div', { class: 'kpi' }, v, sub ? h('small', {}, ' ' + sub) : null));
   const cl = d.clusters, ids = Object.keys(cl.profiles || {});
   const order = ids.slice().sort((x, y) => (cl.assignment[x] ?? 0) - (cl.assignment[y] ?? 0));
-  clear(view).append(f,
+  clear(view).append(providerSetupNotice(),f,
     h('div', { class: 'grid g3' }, kpi('Sessioni avviate', a.started), kpi('Sessioni concluse', a.completion_pct == null ? '—' : a.completion_pct + '%', `${a.completed} su ${a.started}; ${a.open} aperte`),
       kpi('Micro-obiettivi completati', a.goals_pct == null ? '—' : a.goals_pct + '%', `${a.goals_completed} su ${a.goals_agreed}`), kpi('Richieste di indizio', a.hints), kpi('Solleciti dell\'agente', a.agent_prompts),
       kpi('Sospensioni di sicurezza', a.safety, a.safety ? 'da rivedere' : '')),
@@ -337,7 +337,7 @@ async function editor(pid) {
     cur.status === 'published' ? h('p', { class: 'small muted' }, `Salvando una modifica si apre la bozza v${cur.version_no + 1}: la versione pubblicata e le ${cur.sessions} sessioni che la usano restano invariate.`) : null,
     h('p', { class: 'small muted' }, 'Le regole fondamentali della piattaforma (identità di IA, nessuna soluzione, sicurezza) precedono il protocollo e non sono modificabili da qui.'),
     srlGuide(), h('nav',{class:'srl-navigation','aria-label':'Fasi del protocollo'},PHASE_GUIDE.map(([title],i)=>h('a',{href:'#protocol-phase-'+i,onclick:()=>{const section=document.getElementById('protocol-phase-'+i);if(section)section.open=true;}},title))), SPEC.slice().sort((a,b) => Number(!a[0].startsWith('Fase ')) - Number(!b[0].startsWith('Fase '))).map(([title, fields]) => h('details', { class: 'card protocol-section', id:title.startsWith('Fase ')?'protocol-phase-'+(['forethought','performance','self_reflection'].findIndex(phase=>Array.isArray(fields)&&fields.some(f=>f[0].includes(phase)))):null, open: title.startsWith('Fase ') }, h('summary', {}, title), fields === 'rules' ? rbox : fields === 'provider'
-      ? h('div', { class: 'grid g3' }, field('Configurazione del provider', provSel, 'Si gestisce nella scheda Provider.'), field('Temperatura', temp, 'Vuoto = valore predefinito del modello.'), field('Lunghezza massima della risposta (token)', maxTok))
+      ? h('div', { class: 'grid g3' }, field('Configurazione del provider', provSel, 'Si gestisce in Impostazioni applicazione → Assistente IA.'), field('Temperatura', temp, 'Vuoto = valore predefinito del modello.'), field('Lunghezza massima della risposta (token)', maxTok))
       : h('div', { class: 'grid g2' }, fields.map(mk)))),
     h('div', { class: 'card row editor-actions' }, savedState,
       h('button', { onclick: guard(async () => { collect(); cfg.prompt_budget = { ...(cfg.prompt_budget || {}), economy: true }; await api('PUT', `/api/psy/protocols/${pid}/draft`, { config: cfg }); dirty=false; toast('Modalità economica salvata in bozza. Verifica l’anteprima e pubblica per le nuove sessioni.'); editor(pid); }) }, 'Rendi il prompt più economico'),
@@ -392,6 +392,124 @@ function editFreeActivity(a) {
 }
 
 // ───────────────────────── provider
+// Guide informative: fonti ufficiali verificate il 20/11/2026. Disponibilità e condizioni dipendono dall'account.
+const LLM_GUIDES = {
+ gemini: {name:'Google Gemini',access:'Livello gratuito con limiti per alcuni modelli. Disponibilità e quote vanno controllate nel tuo progetto.',
+  account:'https://aistudio.google.com/apikey',pricing:'https://ai.google.dev/gemini-api/docs/pricing',usage:'https://aistudio.google.com/usage',source:'https://ai.google.dev/gemini-api/docs/api-key',
+  steps:['Accedi a Google AI Studio con il tuo account Google.','Apri API Keys e crea una chiave nel progetto scelto. Se necessario, importa il progetto.','Controlla nella pagina Usage quali modelli e quote sono disponibili. Copia la chiave e torna qui.'],
+  economy:'Per iniziare valuta Gemini 3.5 Flash-Lite, se compare nel tuo elenco. È una scelta orientata al costo contenuto, da provare con il tuo protocollo.',candidates:['gemini-3.5-flash-lite'],
+  note:'Il livello gratuito può prevedere l’uso dei contenuti per migliorare i prodotti Google. Per le prove usa dati inventati; verifica le condizioni del tuo progetto prima di inviare dati degli studenti.'},
+ openai: {name:'OpenAI (modelli di ChatGPT)',access:'API con fatturazione separata. Plus non include crediti API nel beneficio verificato; alcuni piani Pro e Business idonei possono attivare crediti. Controlla il tuo account.',
+  account:'https://platform.openai.com/api-keys',pricing:'https://developers.openai.com/api/docs/pricing',usage:'https://platform.openai.com/usage',source:'https://help.openai.com/en/articles/20001626-api-credits-benefit-for-eligible-chatgpt-subscriptions',
+  steps:['Accedi alla piattaforma API di OpenAI con il tuo account.','Controlla crediti e fatturazione del progetto. Se hai un piano idoneo, verifica il beneficio API e attivalo lì.','Apri API keys, crea una chiave segreta per il progetto, copiala e torna qui.'],
+  economy:'Valuta GPT-6 Luna, se disponibile nel tuo elenco: è orientato a compiti frequenti a costo contenuto. I modelli mini/nano precedenti possono avere disponibilità diversa: verifica il catalogo.',candidates:['gpt-6-luna'],
+  note:'Usare ChatGPT nel sito o nell’app non equivale a collegare l’API. Crediti, limiti e scadenze devono essere verificati nella piattaforma API.'},
+ deepseek: {name:'DeepSeek',access:'API a consumo. Non diamo per disponibile una quota gratuita permanente: controlla il saldo e gli eventuali crediti promozionali del tuo account.',
+  account:'https://platform.deepseek.com/api_keys',pricing:'https://api-docs.deepseek.com/quick_start/pricing',usage:'https://platform.deepseek.com',source:'https://api-docs.deepseek.com/',
+  steps:['Accedi alla piattaforma API di DeepSeek.','Controlla saldo, eventuali crediti e prezzi: la chat gratuita non garantisce API gratuite.','Apri API keys, crea la chiave segreta, copiala e torna qui.'],
+  economy:'Valuta deepseek-flash se disponibile. Nel listino consultato costa meno di deepseek-v4-pro. Ragionamento, cache e fascia oraria possono incidere sul costo.',candidates:['deepseek-flash'],
+  note:'L’elenco dei modelli arriva dal servizio. Se la prova non riesce, controlla credito e permessi prima di cambiare modello.'},
+ anthropic: {name:'Anthropic Claude',access:'La documentazione indica crediti iniziali di prova per i nuovi utenti. Verifica importo e condizioni nel tuo account; non è una quota gratuita illimitata. Alcuni piani idonei offrono benefici API.',
+  account:'https://platform.claude.com/settings/keys',pricing:'https://platform.claude.com/docs/en/about-claude/pricing',usage:'https://platform.claude.com/settings/billing',source:'https://platform.claude.com/docs/en/about-claude/pricing',
+  steps:['Accedi alla Console di Claude Platform.','Controlla Billing, eventuali crediti iniziali e benefici del tuo piano.','Apri API keys, crea una chiave segreta, copiala e torna qui.'],
+  economy:'Valuta Claude Haiku 5.5 se compare nell’elenco. La famiglia Haiku è orientata a rapidità e costo contenuto rispetto ai modelli più grandi. Verifica qualità delle domande e formato della risposta.',candidates:['claude-haiku-5-5'],
+  note:'La chat Claude e la piattaforma API hanno configurazioni distinte. I crediti effettivamente utilizzabili sono quelli visibili nella Console.'},
+};
+function llmSetupState(providers = []) {
+ const ordered=providers.slice().sort((a,b)=>Number(!!b.is_default)-Number(!!a.is_default)||Number(a.id)-Number(b.id));
+ const current=ordered[0];
+ if(!current||current.provider_key==='demo')return {needed:true,reason:'demo',current};
+ if(!current.key_mask||!String(current.model_name||'').trim()||!current.capabilities)return {needed:true,reason:'incomplete',current};
+ return {needed:false,current};
+}
+function providerSetupNotice() {
+ const state=llmSetupState(B.providers||[]);if(!state.needed)return null;
+ return h('section',{class:'banner demo','aria-label':'Completa configurazione assistente IA'},h('h2',{},'Completa la configurazione del tuo assistente IA'),
+  h('p',{},state.reason==='demo'?'Il tuo spazio usa ancora risposte simulate. Per un dialogo con un’IA reale collega un servizio personale.':'Il servizio predefinito non è completo: controlla chiave, modello e configurazione.'),
+  h('p',{},'Un servizio IA, detto anche provider, è l’azienda che genera le risposte. Ti accompagniamo nella scelta e nel collegamento; non devi conoscere termini tecnici.'),
+  h('button',{type:'button',class:'primary',onclick:guard(async()=>{tab='providers';await mount(main);providerWizard();})},'Completa configurazione guidata'),
+  h('p',{class:'small'},'Puoi continuare a esplorare ABLET in modalità dimostrativa. Nessun acquisto viene attivato automaticamente.'));
+}
+function providerGuide(key) {
+ const g=LLM_GUIDES[key];
+ const link=(label,url)=>h('a',{href:url,target:'_blank',rel:'noopener noreferrer'},label);
+ return h('section',{class:'card llm-guide'},h('h3',{},g.name),h('p',{},g.access),h('p',{},g.economy),h('p',{class:'small'},g.note),
+  h('div',{class:'row'},link('Account e chiave di collegamento',g.account),link('Prezzi ufficiali',g.pricing),link('Crediti e consumi',g.usage),link('Fonte della guida',g.source)),h('p',{class:'small muted'},'Verifica informativa: 20 novembre 2026. Condizioni e nomi dei modelli possono cambiare.'));
+}
+function providerFailure(result) {
+ if(result.http_status===429||result.status===429||['quota','budget','rate_limit','cooldown'].includes(result.error))return 'Limite o quota raggiunti. Controlla crediti e limiti nel tuo account.'+(result.retry_after?' Attendi almeno '+result.retry_after+' secondi prima di riprovare.':' Non ripetere subito la prova.');
+ if([401,403].includes(result.http_status||result.status))return 'La chiave non è autorizzata. Controlla di aver copiato la chiave completa e di avere accesso al modello.';
+ if([503,529].includes(result.http_status)||result.error==='unavailable')return 'Il servizio è temporaneamente occupato. Attendi e riprova più tardi.';
+ if(result.error==='timeout'||result.error==='rete')return 'Il servizio non ha risposto in tempo o manca la connessione. I dati già salvati restano disponibili.';
+ return 'La prova non è riuscita. Controlla il modello, la chiave e il credito nella piattaforma del servizio. '+errText(result);
+}
+function providerWizard() {
+ if(!B.secrets_ready){clear(view).append(h('h1',{},'Collega il tuo assistente IA'),h('p',{role:'alert'},'Il server non è pronto a custodire le chiavi. Chiedi al gestore di ABLET di completare la configurazione; non inviare la chiave in chat o per e-mail.'),h('button',{onclick:providers},'Torna ai servizi'));return;}
+ let step=1,service='gemini',configId=null,model='',limit='',testedModel=null,busy=false;
+ const steps=['Scegli il servizio','Ottieni la chiave','Scegli il modello','Prova e attiva'];
+ const cancel=()=>{model='';testedModel=null;providers();};
+ const draw=()=>{
+  const heading=h('h1',{tabindex:'-1'},'Collega il tuo assistente IA');
+  const g=LLM_GUIDES[service],status=h('p',{role:'status','aria-live':'polite'}),content=h('div',{class:'card llm-wizard-body'});
+  const back=h('button',{type:'button',onclick:()=>{if(busy)return;step--;draw();}},'Indietro');back.disabled=step===1;
+  clear(view).append(heading,h('p',{},'Passo '+step+' di 4 · '+steps[step-1]),h('p',{class:'small'},'La chiave API è una credenziale segreta: autorizza ABLET a usare il tuo servizio. Non è la password del tuo account. I token sono frammenti di testo elaborati, non euro né parole esatte.'),content,status,
+   h('div',{class:'row'},back,h('button',{type:'button',onclick:()=>{if(!busy)cancel();}},'Esci dalla guida')));
+  const work=async(button,fn)=>{if(busy)return;busy=true;const controls=Array.from(content.querySelectorAll?.('input, select, button')||[]).map(el=>[el,!!el.disabled]);controls.forEach(([el])=>el.disabled=true);button.disabled=true;back.disabled=true;status.textContent='Operazione in corso…';try{await fn();}catch(e){status.textContent=providerFailure(e);}finally{busy=false;controls.forEach(([el,disabled])=>el.disabled=disabled);button.disabled=false;back.disabled=step===1;}};
+  const payload=(extra={})=>({...(configId?{id:configId}:{}),provider_key:service,label:g.name+' · configurazione guidata',model_name:model,monthly_token_limit:limit===''?0:Number(limit),timeout_s:30,max_retries:0,is_default:false,...extra});
+  const save=async(extra={})=>{const r=await api('POST','/api/psy/providers',payload(extra));configId=r.provider.id;return r;};
+  if(step===1){
+   const choice=sel(Object.entries(LLM_GUIDES).map(([k,g])=>[k,g.name]),service,{'aria-label':'Servizio IA',onchange:e=>{service=e.target.value;configId=null;model='';testedModel=null;draw();}});
+   content.append(field('Quale servizio vuoi collegare?',choice),providerGuide(service),h('p',{},'Per una prima prova con un livello gratuito, valuta Gemini e controlla la quota nel tuo progetto. La qualità pedagogica va verificata con conversazioni simulate.'),
+    h('button',{type:'button',class:'primary',onclick:()=>{step=2;draw();}},'Continua'));
+  }else if(step===2){
+   const secret=h('input',{type:'password',autocomplete:'new-password',spellcheck:'false','aria-label':'Chiave API personale',placeholder:configId?'Chiave già salvata: lascia vuoto per mantenerla':'Incolla qui la chiave segreta'});
+   const acknowledged=h('input',{type:'checkbox','aria-label':'Confermo condizioni e invio al servizio'});
+   const button=h('button',{type:'button',class:'primary',onclick:async()=>{
+    if(!acknowledged.checked){status.textContent='Prima conferma di aver verificato le condizioni del servizio.';return;}
+    if(!configId&&!secret.value.trim()){status.textContent='Incolla la chiave creata nella piattaforma del servizio.';return;}
+    await work(button,async()=>{await save(secret.value.trim()?{api_key:secret.value.trim()}:{});secret.value='';testedModel=null;busy=false;step=3;draw();});
+   }},'Salva chiave e continua');
+   content.append(h('h2',{},'Crea la chiave nel tuo account '+g.name),h('ol',{},g.steps.map(t=>h('li',{},t))),h('a',{href:g.account,target:'_blank',rel:'noopener noreferrer'},'Apri la piattaforma ufficiale'),
+    field('Chiave di collegamento (API key)',secret),h('p',{class:'small'},'La chiave viene salvata cifrata sul server. Non la conserviamo nel browser e non viene mostrata agli studenti.'),h('p',{},g.access),h('p',{class:'small'},g.note),
+    h('label',{class:'inline'},acknowledged,'Ho verificato le condizioni e gli eventuali costi. So che il servizio riceverà protocollo, materiali e messaggi delle sessioni.'),button);
+  }else if(step===3){
+   const modelInput=h('input',{value:model,maxlength:120,'aria-label':'Modello IA',oninput:e=>{model=e.target.value;testedModel=null;}}),list=h('div',{});
+   const load=h('button',{type:'button',onclick:async()=>{await work(load,async()=>{
+    const r=await api('GET',`/api/psy/providers/${configId}/models`);
+    if(r.error){status.textContent=providerFailure(r);return;}
+    const models=(r.models||[]).filter(m=>typeof m==='string'&&m&&!/(?:embedding|moderation|tts|transcrib|audio|realtime|image|dall-e|sora|whisper|codex|deep-research)/i.test(m));
+    if(!models.length){status.textContent='Il servizio non ha restituito modelli. Controlla l’account o inserisci il nome esatto dalla documentazione ufficiale.';return;}
+    const sorted=models.slice().sort((a,b)=>Number(g.candidates.includes(b))-Number(g.candidates.includes(a))||a.localeCompare(b));
+    const chooseModel=sel([['','Scegli un modello'],...sorted.map(m=>[m,m+(g.candidates.includes(m)?' · candidato economico da provare':'')])],model,{'aria-label':'Modelli disponibili nel tuo account',onchange:e=>{model=e.target.value;modelInput.value=model;testedModel=null;}});
+    list.replaceChildren(field('Modelli restituiti dal servizio',chooseModel));status.textContent='Elenco aggiornato. Scegli un modello; la disponibilità nell’elenco non garantisce una quota gratuita.';
+   });}},'Carica modelli disponibili');
+   const cap=h('input',{type:'number',min:1,step:1,value:limit,'aria-label':'Tetto mensile locale di token',oninput:e=>{limit=e.target.value;}});
+   const next=h('button',{type:'button',class:'primary',onclick:async()=>{model=modelInput.value.trim();if(!model){status.textContent='Scegli un modello dall’elenco o inserisci il nome esatto.';return;}if(limit!==''&&(!Number.isSafeInteger(Number(limit))||Number(limit)<1)){status.textContent='Il tetto mensile deve essere un numero intero positivo, oppure lascia il campo vuoto.';return;}await work(next,async()=>{await save();busy=false;step=4;draw();});}},'Salva modello e continua');
+   content.append(h('h2',{},'Scegli la versione dell’IA'),h('p',{},g.economy),h('p',{},'I candidati economici sono indicati solo se il servizio li restituisce. Non sono una garanzia di costo minimo o di adeguatezza educativa.'),load,list,field('Nome del modello (puoi anche copiarlo dalla documentazione)',modelInput),
+    field('Tetto mensile per questa configurazione, in token (facoltativo)',cap,'Limite locale di ABLET: non è un budget in euro, non comprende altre applicazioni e può essere superato dall’ultima chiamata già partita. Imposta anche i controlli di spesa del servizio.'),
+    h('a',{href:g.pricing,target:'_blank',rel:'noopener noreferrer'},'Confronta i prezzi ufficiali prima di scegliere'),h('details',{},h('summary',{},'Come ridurre costi e token senza indebolire la guida SRL'),h('p',{},'Un modello economico costa meno per token, ma non usa necessariamente meno token. Contano lunghezza del protocollo, cronologia, risposta e ragionamento. Nei Protocolli puoi usare «Rendi il prompt più economico» e verificare l’anteprima. Valuta poi i dati in Consumi token, mantenendo tutte le regole educative. Risposte troppo brevi possono interrompere il formato richiesto.')),next);
+  }else{
+   const consent=h('input',{type:'checkbox','aria-label':'Attiva come servizio predefinito'});
+   const activate=h('button',{type:'button',class:'primary',disabled:true,onclick:async()=>{
+    if(testedModel!==model||!consent.checked||busy)return;
+    await work(activate,async()=>{await save({is_default:true});await reload();busy=false;await providers();toast('Assistente IA configurato e impostato come predefinito. Prova ora una sessione dimostrativa.');});
+   }},'Attiva per il mio spazio');
+   consent.addEventListener('change',()=>{activate.disabled=testedModel!==model||!consent.checked||busy;});
+   const test=h('button',{type:'button',onclick:async()=>{
+    testedModel=null;activate.disabled=true;
+    await work(test,async()=>{const r=await api('POST',`/api/psy/providers/${configId}/test`,{});
+     if(r.ok&&r.json_valid&&!r.simulated){testedModel=model;status.textContent='Collegamento riuscito e formato della risposta valido. Puoi attivare il servizio. La prova non certifica la qualità pedagogica né le quote future.';}
+     else status.textContent=r.ok?'La risposta non ha il formato richiesto. Scegli un altro modello o riprova dopo aver controllato la configurazione.':providerFailure(r);
+    });activate.disabled=testedModel!==model||!consent.checked;
+   }},'Prova il collegamento');
+   content.append(h('h2',{},'Prova prima di attivare'),h('p',{},g.name+' · modello '+model),h('p',{},'La prova invia un messaggio tecnico, senza dati degli studenti. Può consumare token e credito del tuo servizio.'),test,
+    h('label',{class:'inline'},consent,'Voglio usare questo servizio come predefinito per il mio spazio.'),activate,h('p',{class:'small'},'L’attivazione non modifica i protocolli che selezionano esplicitamente un’altra configurazione. Il livello gratuito può esaurirsi: controlla quote e consumi.'));
+  }
+  heading.focus?.();
+ };
+ draw();
+}
+
 async function providers() {
   const NAMES = { demo: 'Modalità dimostrativa (nessun servizio esterno)', gemini: 'Google Gemini', openai: 'OpenAI (ChatGPT)', anthropic: 'Anthropic', deepseek: 'DeepSeek', openai_compatible: 'Endpoint compatibile con «chat completions»' };
   const form = (p = {}) => { const models = h('datalist', { id: 'ml' + (p.id || 'n') });
@@ -424,10 +542,14 @@ async function providers() {
             inp.parentNode.querySelector('select[aria-label="Modelli disponibili"]')?.remove(); inp.after(pick); toast(r.models.length ? `${r.models.length} modelli disponibili: scegli dal campo Modello.` : 'Nessun modello restituito' + (r.error ? ` (${r.error}${r.detail ? ' — ' + r.detail : ''})` : '') + '.'); }) }, 'Carica modelli'),
           h('button', { type: 'button', class: 'danger', onclick: guard(async () => { if (!confirm('Rimuovere la configurazione e la chiave salvata?')) return; await api('DELETE', `/api/psy/providers/${p.id}`); await reload(); providers(); }) }, 'Rimuovi')] : null),testResult);
     return f; };
-  clear(view).append(h('h1', {}, 'Provider del modello linguistico'),
+  clear(view).append(h('h1', {}, 'Il tuo assistente IA'),
+    h('p',{},'Scegli il servizio che genera le risposte di ABLET. La guida spiega account, chiavi, modelli e costi con parole semplici.'),
+    h('p',{role:'status'},llmSetupState(B.providers||[]).needed?'Configurazione da completare: le risposte predefinite sono simulate o il collegamento non è completo.':'Servizio predefinito: '+llmSetupState(B.providers||[]).current.label+' · '+llmSetupState(B.providers||[]).current.model_name),
+    h('button',{type:'button',class:'primary',onclick:providerWizard},'Avvia configurazione guidata'),
+    h('details',{},h('summary',{},'Guide ai servizi, gratuità e modelli economici'),Object.keys(LLM_GUIDES).map(providerGuide)),
     B.secrets_ready ? null : h('div', { class: 'banner safe' }, 'APP_SECRET_KEY non è impostata sul server: non è possibile salvare chiavi API. Resta disponibile la modalità dimostrativa.'),
     h('p', { class: 'muted' }, 'Le chiamate partono solo dal server. Al fornitore sono inviati il protocollo, lo stato della sessione, i materiali dell\'attività e i messaggi: mai nomi, codici di accesso o alias. Verifica condizioni d\'uso e trattamento dei dati del fornitore scelto prima di usarlo con studenti reali.'),
-    B.providers.map(form), form());
+    h('details',{class:'card'},h('summary',{},'Configurazione manuale e avanzata'),B.providers.map(form), form()));
 }
 
 // ───────────────────────── voce e avatar

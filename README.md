@@ -3,9 +3,19 @@
 Piattaforma web in italiano per sostenere l'autoregolazione dell'apprendimento con un agente pedagogico conversazionale.
 Committente scientifico: Prof. Angelo Rega.
 
-**Stato: MVP con modalità Attività libera (aggiornamento 0.12.2).** Frontend HTML/CSS/JavaScript senza dipendenze, backend PHP, database MySQL/MariaDB.
+**Stato: MVP con modalità Attività libera (aggiornamento 0.13.0).** Frontend HTML/CSS/JavaScript senza dipendenze, backend PHP, database MySQL/MariaDB.
 
 > La riuscita tecnica dell'MVP non equivale alla sua validazione scientifica: soglie, livelli di supporto, codebook e lessico di polarità sono parametri progettuali da validare.
+
+## Versione 0.13.0 — configurazione guidata dell’assistente IA
+
+In **Impostazioni applicazione → Assistente IA**, un percorso in quattro passi spiega servizio, chiave di collegamento, modelli, token e fatturazione. Guide distinte per Gemini, OpenAI, DeepSeek e Claude con collegamenti alle piattaforme ufficiali e ai listini, verificate il 20 novembre 2026. Distingue livelli gratuiti, crediti di prova, benefici di abbonamento e API a pagamento, senza promettere una quota universale.
+
+La home del professionista invita a completare la configurazione se il predefinito è dimostrativo o incompleto. Il wizard salva prima una configurazione personale non predefinita, carica i modelli dal servizio, propone candidati economici soltanto se presenti, permette l’inserimento manuale e offre un tetto mensile locale facoltativo. L’attivazione come predefinito richiede una prova tecnica riuscita con risposta JSON reale e una scelta esplicita. Gli errori lasciano disponibili i campi e i nuovi tentativi manuali. La configurazione avanzata resta disponibile.
+
+Costo per token e quantità di token sono distinti: lunghezza del prompt, cronologia, ragionamento e risposte incidono sui consumi. Il limite locale non è un tetto in euro né una garanzia di spesa esatta. I protocolli che scelgono una configurazione specifica conservano quella scelta. Le chiavi non vengono memorizzate nel browser. Il numero di versione nel Super admin diventa 0.13.0.
+
+**Nessuna migrazione:** caricare i file conservando `config.php`, `.env` e `storage/`, poi aprire `refresh.php`. Verifiche: `node tests/provider_onboarding.cjs` e regressioni `ui_v05.cjs`, `cache_refresh.cjs`, `admin_ui.cjs`. Le prove usano servizi simulati: creazione dell’account, quote effettive e consegna delle risposte reali restano da verificare nel proprio progetto API.
 
 ## Versione 0.12.2 — versione installata nel Super admin
 
