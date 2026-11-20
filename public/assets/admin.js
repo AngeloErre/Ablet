@@ -7,8 +7,11 @@ const choose=(values,value)=>h('select',{},values.map(([key,label])=>h('option',
 export async function mount(el){adminRoot=el;await render();}
 async function render(){
  const view=h('section',{class:'admin-content'});
+ const footer=h('footer',{class:'small muted','aria-live':'polite'},'Versione installata: caricamento…');
  clear(adminRoot).append(h('header',{class:'row'},h('h1',{},'Super admin'),h('a',{href:`${BASE}/?area=professionista`},'Il mio spazio professionale'),h('a',{href:`${BASE}/?preview_home=1`,target:'_blank',rel:'noopener'},'Anteprima homepage')),
-  h('nav',{class:'row','aria-label':'Amministrazione'},...['users','home','mail'].map(k=>h('button',{'aria-pressed':String(mode===k),onclick:guard(async()=>{if(dirtyHome&&!confirm('Ci sono modifiche alla homepage non salvate. Uscire?'))return;dirtyHome=false;mode=k;await render();})},k==='users'?'Professionisti':k==='home'?'Testi e immagini homepage':'Posta e recupero'))),view);
+  h('nav',{class:'row','aria-label':'Amministrazione'},...['users','home','mail'].map(k=>h('button',{'aria-pressed':String(mode===k),onclick:guard(async()=>{if(dirtyHome&&!confirm('Ci sono modifiche alla homepage non salvate. Uscire?'))return;dirtyHome=false;mode=k;await render();})},k==='users'?'Professionisti':k==='home'?'Testi e immagini homepage':'Posta e recupero'))),view,footer);
+ try { const info=await api('GET','/api/admin/version');footer.textContent=info.version?`ABLET · Versione installata: ${info.version}`:'Versione installata: non disponibile'; }
+ catch { footer.textContent='Versione installata: non disponibile'; }
  if(mode==='users')await users(view);else if(mode==='mail')await mailSettings(view);else await home(view);
 }
 function editor(user,onSave){

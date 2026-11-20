@@ -3,9 +3,15 @@
 Piattaforma web in italiano per sostenere l'autoregolazione dell'apprendimento con un agente pedagogico conversazionale.
 Committente scientifico: Prof. Angelo Rega.
 
-**Stato: MVP con modalità Attività libera (aggiornamento 0.12.1).** Frontend HTML/CSS/JavaScript senza dipendenze, backend PHP, database MySQL/MariaDB.
+**Stato: MVP con modalità Attività libera (aggiornamento 0.12.2).** Frontend HTML/CSS/JavaScript senza dipendenze, backend PHP, database MySQL/MariaDB.
 
 > La riuscita tecnica dell'MVP non equivale alla sua validazione scientifica: soglie, livelli di supporto, codebook e lessico di polarità sono parametri progettuali da validare.
+
+## Versione 0.12.2 — versione installata nel Super admin
+
+Il footer di tutte le sezioni Super admin mostra **ABLET · Versione installata: 0.12.2**, letta dal server tramite una rotta riservata agli amministratori. Il numero proviene da `src/Support/Version.php`, non dalle revisioni della homepage o dalla cache del browser. Se il dato non è disponibile, il footer lo segnala senza bloccare il pannello. La versione identifica il codice distribuito, non certifica la completezza di un caricamento parziale.
+
+Caricare insieme `src/Support/Version.php`, `src/Http/AdminApi.php` e `public/assets/admin.js` (oppure l'intero pacchetto), conservando configurazioni e dati. Aprire `refresh.php`. Nessuna migrazione del database.
 
 ## Versione 0.12.1 — salvataggio delle attività libere su hosting compatibili con MySQL 5.6
 
