@@ -3,9 +3,69 @@
 Piattaforma web in italiano per sostenere l'autoregolazione dell'apprendimento con un agente pedagogico conversazionale.
 Committente scientifico: Prof. Angelo Rega.
 
-**Stato: MVP con modalità Attività libera (aggiornamento 0.12.0).** Frontend HTML/CSS/JavaScript senza dipendenze, backend PHP, database MySQL/MariaDB.
+**Stato: MVP con modalità Attività libera (aggiornamento 0.15.1).** Frontend HTML/CSS/JavaScript senza dipendenze, backend PHP, database MySQL/MariaDB.
 
 > La riuscita tecnica dell'MVP non equivale alla sua validazione scientifica: soglie, livelli di supporto, codebook e lessico di polarità sono parametri progettuali da validare.
+
+## Versione 0.15.1 — debug e correzioni
+
+Corretto l'accesso alle API vocali dal workspace professionale del Super admin, incluse le anteprime; gli studenti conservano controlli su titolarità, modalità e autorizzazioni. I campi testuali di login, messaggi, azioni, credenziali provider e audio rifiutano strutture JSON improprie invece di convertirle in `Array`. I filtri API rifiutano array e byte nulli; la dashboard valida date reali e ordine dell'intervallo.
+
+Il tetto mensile dei provider viene validato entro il limite SQL di 4.294.967.295 token, coerentemente anche nel wizard. Un salvataggio non valido non azzera più la configurazione predefinita: le scritture avvengono in transazione, serializzate per professionista. `ApiError` dispone del proprio file per l'autoload anche nei servizi richiamati da CLI. Aggiornate le verifiche delle migrazioni pregresse e aggiunto un controllo della configurazione effettiva prima che le suite distruttive possano azzerare uno schema: solo `APP_ENV=development` e un nome database contenente `test`.
+
+**Nessuna nuova migrazione rispetto a 0.15.0.** Caricare i file conservando `config.php`, `.env` e `storage/`, quindi aprire `refresh.php`. Chi proviene da versioni precedenti deve comunque applicare le migrazioni mancanti fino alla 014. Il dettaglio delle prove e dei limiti è in **DEBUG_REPORT.md**. Nuove regressioni: `tests/debug_regressions.php` e `tests/input_validation.php`; integrate nella suite principale.
+
+## Versione 0.15.0 — memoria longitudinale compatta
+
+La scheda **Studenti → Memoria dello studente** presenta riepiloghi descrittivi delle sessioni concluse, con accesso alla sessione di origine. Ogni chiusura consolida automaticamente un singolo delta JSON numerico: passi dichiarati completati, richieste di indizi, difficoltà segnalate, cambi di strategia, numero di messaggi in riflessione, presenza di strategia e stima dichiarate, autoefficacia/difficoltà attesa dichiarate (se disponibili, scala 1–5), supporto e ampiezza dei passi. La chiusura incompleta resta distinta. Non si copiano chat, non si inferiscono emozioni o capacità, non si generano punteggi psicometrici né nuove analisi LLM.
+
+Il professionista può aggiungere **500 caratteri** di indicazioni, disattivare l'uso della memoria o escludere/reincludere singole sessioni. Il contesto è aggiornato a ogni nuova chiamata dell'agente: finestra di 20 sessioni consolidate, massimo 5 inviate con priorità alla stessa attività e limite 6.000 byte per il blocco JSON (non è un limite in token né del prompt totale). Altre attività sono identificate esplicitamente. Solo le indicazioni professionali contengono testo libero; si inviano come dati subordinati al protocollo. Nessun trend automatico o sintesi narrativa interpretativa. Le sessioni simulate sono escluse; quelle con agente demo sono segnalate. Le sessioni abbandonate senza chiusura non producono un delta.
+
+Per le sessioni pregresse usare **Recupera ultime 20 sessioni già concluse**. I riepiloghi sono idempotenti e non duplicano sessioni. La tabella corrente è calcolata dai delta, evitando copie ripetute della sintesi; le esclusioni e le modifiche alle indicazioni vengono registrate nell'audit senza duplicarne il contenuto. Gli aggiornamenti della scheda hanno controllo di revisione per non sovrascrivere modifiche concorrenti. I riepiloghi sono collegati alle sessioni: cancellazione/retention delle sessioni elimina anche le relative evidenze; cancellazione dello studente elimina anche le impostazioni. L'export include scheda, indicazioni ed esclusioni, oltre a tutti i delta del professionista. Il testo delle indicazioni resta fino a modifica o cancellazione dello studente: verificarlo quando si eliminano le sessioni di riferimento.
+
+**Installazione:** conservare configurazioni e dati, applicare la migrazione **014_student_memory** con `install.php` e chiave di installazione (oppure `php bin/migrate.php`), poi `refresh.php`. Se si proviene da versioni precedenti, vengono applicate anche le migrazioni mancanti. Mai `--fresh` su dati reali. Il numero nel footer Super admin diventa 0.15.0.
+
+**Verifiche dedicate:** `php tests/student_memory.php` (38 controlli di servizio/HTTP), `node tests/student_memory_ui.cjs` (12 controlli DOM) e `php tests/upgrade_memory.php` (solo database di test: aggiornamento da schema 013 e idempotenza). La suite PHP include questi controlli di servizio e aggiornamento.
+
+**Spazio e costi:** un delta compatto per chiusura e una riga per coppia professionista/studente; il totale cresce con le sessioni conservate. I contatori non costituiscono una validazione del modello dello studente. Il blocco è limitato in byte, ma occupa comunque token nella chiamata dell'agente; nessuna chiamata di consolidamento aggiuntiva. Il numero di byte mostrato nella scheda riguarda la risposta JSON, non indici, overhead o backup del database.
+
+## Versione 0.14.0 — accesso con il solo PIN
+
+Studenti e professionisti possono accedere digitando **soltanto un PIN di 6 cifre**, univoco per installazione (anche con zeri iniziali). La schermata propone il PIN e mantiene il pulsante per codice/e-mail e password. Il Super admin usa la password.
+
+- Professionista: accedere con password, poi **Impostazioni applicazione → Il mio profilo → Accesso con il solo PIN**. Confermare la password per generare o disattivare il PIN.
+- Studente: nella sezione **Studenti**, premere **Genera nuovo PIN** e comunicarlo privatamente allo studente. Il professionista può rigenerarlo se smarrito o disattivarlo.
+- Il PIN compare una sola volta e non può essere riletto. Generarlo di nuovo sostituisce quello precedente. La password resta disponibile. I reset password invalidano PIN e sessioni precedenti tramite session_version; sospensioni e account amministrativi non consentono accesso PIN.
+
+**Aggiornamento database necessario:** conservare `config.php`, `.env` e `storage/`, caricare il pacchetto e applicare la migrazione **013_pin_access** da `install.php` con la chiave di installazione, oppure `php bin/migrate.php`. Poi aprire `refresh.php`. Non usare `--fresh` su dati reali. Nessun PIN viene attivato automaticamente per gli account esistenti.
+
+La chiave `APP_SECRET_KEY` deve restare stabile: il lookup è un HMAC distinto per dominio e la verifica usa password_hash/password_verify. Il database non conserva PIN in chiaro; l'indice univoco previene collisioni fra account. HTTPS necessario in produzione. Un PIN ha meno entropia di una password: chi lo conosce accede all'account. Limiti condivisi fra portali: 5 tentativi per IP in 10 minuti e 100 globali in 10 minuti (includono gli accessi riusciti); NAT condivisi e molti accessi simultanei possono richiedere attesa. Rigenerare/disattivare il PIN blocca i nuovi accessi con quel codice; le sessioni già aperte restano attive fino a logout, scadenza o reset password. Non conservare né inviare PIN in URL, log o archiviazione browser.
+
+Verifica dedicata: `php tests/pin_access.php`, integrata nella suite HTTP.
+
+## Versione 0.13.0 — configurazione guidata dell’assistente IA
+
+In **Impostazioni applicazione → Assistente IA**, un percorso in quattro passi spiega servizio, chiave di collegamento, modelli, token e fatturazione. Guide distinte per Gemini, OpenAI, DeepSeek e Claude con collegamenti alle piattaforme ufficiali e ai listini, verificate il 20 novembre 2026. Distingue livelli gratuiti, crediti di prova, benefici di abbonamento e API a pagamento, senza promettere una quota universale.
+
+La home del professionista invita a completare la configurazione se il predefinito è dimostrativo o incompleto. Il wizard salva prima una configurazione personale non predefinita, carica i modelli dal servizio, propone candidati economici soltanto se presenti, permette l’inserimento manuale e offre un tetto mensile locale facoltativo. L’attivazione come predefinito richiede una prova tecnica riuscita con risposta JSON reale e una scelta esplicita. Gli errori lasciano disponibili i campi e i nuovi tentativi manuali. La configurazione avanzata resta disponibile.
+
+Costo per token e quantità di token sono distinti: lunghezza del prompt, cronologia, ragionamento e risposte incidono sui consumi. Il limite locale non è un tetto in euro né una garanzia di spesa esatta. I protocolli che scelgono una configurazione specifica conservano quella scelta. Le chiavi non vengono memorizzate nel browser. Il numero di versione nel Super admin diventa 0.13.0.
+
+**Nessuna migrazione:** caricare i file conservando `config.php`, `.env` e `storage/`, poi aprire `refresh.php`. Verifiche: `node tests/provider_onboarding.cjs` e regressioni `ui_v05.cjs`, `cache_refresh.cjs`, `admin_ui.cjs`. Le prove usano servizi simulati: creazione dell’account, quote effettive e consegna delle risposte reali restano da verificare nel proprio progetto API.
+
+## Versione 0.12.2 — versione installata nel Super admin
+
+Il footer di tutte le sezioni Super admin mostra **ABLET · Versione installata: 0.12.2**, letta dal server tramite una rotta riservata agli amministratori. Il numero proviene da `src/Support/Version.php`, non dalle revisioni della homepage o dalla cache del browser. Se il dato non è disponibile, il footer lo segnala senza bloccare il pannello. La versione identifica il codice distribuito, non certifica la completezza di un caricamento parziale.
+
+Caricare insieme `src/Support/Version.php`, `src/Http/AdminApi.php` e `public/assets/admin.js` (oppure l'intero pacchetto), conservando configurazioni e dati. Aprire `refresh.php`. Nessuna migrazione del database.
+
+## Versione 0.12.1 — salvataggio delle attività libere su hosting compatibili con MySQL 5.6
+
+Rimosse dal salvataggio le chiamate SQL JSON_SET/JSON_EXTRACT, non disponibili in MySQL 5.6. Le caratteristiche precedenti delle sessioni vengono conservate con lettura e scrittura JSON in PHP, dentro la stessa transazione e con blocco delle righe. Assegnazioni, stato, versione del protocollo e informazioni dello studente restano conservati; i salvataggi successivi non sovrascrivono lo storico.
+
+Test dedicato: `php tests/activity_edit_http.php`, integrato in `tests/run_all.sh`: 21 controlli su salvataggio, storico, campi facoltativi, validazione e autorizzazioni. Verifica eseguita su MariaDB con schema LONGTEXT di compatibilità MySQL 5.6, non su un server MySQL 5.6 originale. La causa dell’errore nella singola installazione va confermata dal messaggio o log del server.
+
+**Nessuna migrazione e nessuna modifica alla UI.** Per la sola correzione sostituire `src/Http/PsyApi.php`, conservando le configurazioni e i dati. In alternativa caricare il pacchetto completo conservando `config.php`, `.env` e `storage/`, quindi aprire `refresh.php`.
 
 ## Versione 0.12.0 — monitoraggio token
 

@@ -6,14 +6,6 @@ namespace Ablet\Http;
 use Ablet\Support\Database;
 use Ablet\Support\Env;
 
-final class ApiError extends \RuntimeException
-{
-    public function __construct(public readonly int $status, string $code, public readonly mixed $detail = null)
-    {
-        parent::__construct($code);
-    }
-}
-
 /** Nucleo HTTP: sessione sicura, CSRF, limitazione delle richieste, instradamento, risposte JSON. */
 final class App
 {
@@ -61,6 +53,8 @@ final class App
             $_SESSION['last'] = time();
             $_SESSION['csrf'] ??= bin2hex(random_bytes(24));
 
+            // Tutti i filtri API sono scalari; array nella query non vanno convertiti in stringhe.
+            foreach($_GET as $value)if(!is_string($value)||str_contains($value,"\0"))throw new ApiError(422,'dati_non_validi');
             $method = $_SERVER['REQUEST_METHOD'] ?? 'GET';
             if ($method !== 'GET' && !hash_equals($_SESSION['csrf'], (string)($_SERVER['HTTP_X_CSRF_TOKEN'] ?? ''))) {
                 throw new ApiError(403, 'csrf_non_valido');
@@ -106,6 +100,14 @@ final class App
         return $d;
     }
 
+    /** Campi testuali JSON: non convertire array/oggetti nel testo "Array". */
+    public static function text(array $input,string $key,string $default=''): string
+    {
+        $value=$input[$key]??$default;
+        if(!is_string($value)||str_contains($value,"\0"))throw new ApiError(422,'dati_non_validi');
+        return $value;
+    }
+
     public static function user(): array
     {
         if (self::$user === null) {
@@ -149,17 +151,30 @@ final class App
     public static function login(): array
     {
         $in = self::input();
-        $login = trim((string)($in['login'] ?? ''));
-        self::rateLimit('login:' . hash('sha256', ($_SERVER['REMOTE_ADDR'] ?? '') . '|' . mb_strtolower($login)), 8, 600);
-        $st = Database::pdo()->prepare("SELECT id, password_hash, role, session_version FROM users WHERE login = ? AND status = 'active'");
-        $st->execute([$login]);
-        $u = $st->fetch();
-        // Verifica sempre un hash, anche per utenti inesistenti, per non rivelarne l'esistenza dai tempi di risposta.
-        $ok = password_verify((string)($in['password'] ?? ''), $u['password_hash'] ?? password_hash('assente', PASSWORD_DEFAULT));
-        if (!$u || !$ok) { throw new ApiError(401, 'credenziali_non_valide'); }
-        $expected = $in['expected_role'] ?? null;
-        if ($expected !== null && (!in_array($expected, ['student', 'psychologist', 'admin'], true) || ($u['role'] !== $expected && !($expected === 'psychologist' && $u['role'] === 'admin')))) {
-            throw new ApiError(403, 'accesso_non_corrispondente');
+        if (array_key_exists('pin',$in)) {
+            self::rateLimit('pin:ip:'.hash('sha256',$_SERVER['REMOTE_ADDR']??''),5,600);
+            self::rateLimit('pin:global',100,600);
+            $pin=$in['pin'];$valid=is_string($pin)&&preg_match('/^[0-9]{6}$/D',$pin);
+            $lookup=\Ablet\Service\AccessPin::lookup($valid?$pin:'invalid');
+            $st=Database::pdo()->prepare("SELECT u.id,u.role,u.session_version,p.pin_hash FROM access_pins p JOIN users u ON u.id=p.user_id WHERE p.lookup_hash=? AND u.status='active' AND u.role IN ('student','psychologist') AND p.issued_version=u.session_version");
+            $st->execute([$lookup]);$u=$st->fetch();
+            $ok=password_verify($valid?$pin:'invalid',$u['pin_hash']??password_hash('assente',PASSWORD_DEFAULT));
+            $expected=$in['expected_role']??null;
+            if(!$valid||!$u||!$ok||($expected!==null&&$expected!==$u['role']))throw new ApiError(401,'credenziali_non_valide');
+        } else {
+            $login = trim(self::text($in,'login'));
+            $password=self::text($in,'password');
+            self::rateLimit('login:' . hash('sha256', ($_SERVER['REMOTE_ADDR'] ?? '') . '|' . mb_strtolower($login)), 8, 600);
+            $st = Database::pdo()->prepare("SELECT id, password_hash, role, session_version FROM users WHERE login = ? AND status = 'active'");
+            $st->execute([$login]);
+            $u = $st->fetch();
+            // Verifica sempre un hash, anche per utenti inesistenti, per non rivelarne l'esistenza dai tempi di risposta.
+            $ok = password_verify($password, $u['password_hash'] ?? password_hash('assente', PASSWORD_DEFAULT));
+            if (!$u || !$ok) { throw new ApiError(401, 'credenziali_non_valide'); }
+            $expected = $in['expected_role'] ?? null;
+            if ($expected !== null && (!in_array($expected, ['student', 'psychologist', 'admin'], true) || ($u['role'] !== $expected && !($expected === 'psychologist' && $u['role'] === 'admin')))) {
+                throw new ApiError(403, 'accesso_non_corrispondente');
+            }
         }
         session_regenerate_id(true);
         $_SESSION = ['uid' => (int)$u['id'], 'version'=>(int)$u['session_version'], 'last' => time(), 'csrf' => bin2hex(random_bytes(24))];

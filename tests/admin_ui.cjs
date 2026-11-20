@@ -4,9 +4,10 @@ const root=new E('div'),html=new E('html');html.dataset={base:''};const ctx=vm.c
 const clean=s=>s.replace(/^import .*;$/mg,'').replace(/^export /mg,'').replace(/^boot\(\)\.catch.*$/m,'');
 vm.runInContext(clean(fs.readFileSync(path.join(__dirname,'../public/assets/app.js'),'utf8')),ctx);
 vm.runInContext(clean(fs.readFileSync(path.join(__dirname,'../public/assets/admin.js'),'utf8')),ctx);
-const all=e=>[e,...e.children.flatMap(all)],text=e=>e.nodeType===3?e.nodeValue:e.children.map(text).join(' ');
+const all=e=>[e,...e.children.flatMap(all)],text=e=>e.textContent??(e.nodeType===3?e.nodeValue:e.children.map(text).join(' '));
 (async()=>{
- ctx.api=async()=>({users:[],total:0,page:1,page_size:25});await ctx.mount(root);
+ ctx.api=async(m,p)=>p==='/api/admin/version'?{version:'0.12.2'}:{users:[],total:0,page:1,page_size:25};await ctx.mount(root);
+ ck('Footer riporta la versione comunicata dal server',all(root).some(e=>e.tag==='footer'&&text(e)==='ABLET · Versione installata: 0.12.2'));
  ck('Area super admin separata',text(root).includes('Super admin')&&text(root).includes('Professionisti'));
  ck('Accesso al proprio spazio preservato',all(root).some(e=>e.attrs.href==='/?area=professionista'));
  ck('Creazione professionista disponibile',text(root).includes('Crea un professionista'));
@@ -21,5 +22,6 @@ const all=e=>[e,...e.children.flatMap(all)],text=e=>e.nodeType===3?e.nodeValue:e
  ctx.api=async()=>({config:{enabled:false,from:'',public_url:''},available:false});await ctx.mailSettings(root);
  ck('Posta e recupero configurabili dall’area admin',text(root).includes('Posta e recupero password')&&text(root).includes('URL pubblico esatto'));
  ck('Prova e-mail distinta dal recupero',text(root).includes('Invia e-mail di prova')&&text(root).includes('senza password o link'));
+ ctx.api=async(m,p)=>{if(p==='/api/admin/version')throw new Error('offline');return {users:[],total:0,page:1,page_size:25};};await ctx.mount(root);ck('Errore versione non blocca la gestione professionisti',text(root).includes('Crea un professionista')&&text(root).includes('Versione installata: non disponibile'));
  console.log('Admin UI: '+n+' controlli superati.');
 })().catch(e=>{console.error(e);process.exit(1);});

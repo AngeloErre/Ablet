@@ -8,12 +8,14 @@ final class AdminApi
 {
  public static function register():void {
   $route=static fn($m,$p,$f)=>App::route($m,'/api/admin'.$p,[self::class,$f],'admin');
+  $route('GET','/version','version');
   $route('GET','/users','users');$route('POST','/users','create');$route('PUT','/users/{id}','update');$route('POST','/users/{id}/reset','reset');
   $route('GET','/home','home');$route('PUT','/home','saveHome');$route('POST','/home/publish','publish');$route('POST','/home/restore/{id}','restore');$route('POST','/home/image','upload');
   App::route('POST','/api/psy/activate-admin',[self::class,'activate'],'psychologist');
   App::route('GET','/api/site/home',static function():array { $q=Database::pdo()->query('SELECT published_json FROM site_homepage WHERE id=1');return ['content'=>json_decode($q->fetchColumn()?:'{}',true)]; });
   App::route('GET','/api/site/media/{id}',[self::class,'media']);
  }
+ public static function version():array { return ['version'=>\Ablet\Support\Version::CURRENT]; }
  public static function activate():array {
   App::rateLimit('activate-admin:'.App::user()['id'],5,3600);
   $in=App::input();if(!Setup::ownerKeyMatches(is_string($in['owner_key']??null)?$in['owner_key']:''))throw new ApiError(403,'chiave_installazione_non_valida');

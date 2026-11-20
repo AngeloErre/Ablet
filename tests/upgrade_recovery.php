@@ -9,11 +9,11 @@ try{
  Migrator::run($p,$dir);$argv=['demo.php','--quiet'];ob_start();require ABLET_ROOT.'/database/seeds/demo.php';ob_end_clean();
  $p->exec("INSERT INTO app_flags(name,value) VALUES('recovery_migration_test','valore precedente')");
  $before=$p->query('SELECT id,login,password_hash,role,status,session_version FROM users ORDER BY id')->fetchAll();
- $r=Migrator::run($p,ABLET_ROOT.'/database/migrations');if($r['applied']!==['012_password_recovery.sql'])throw new RuntimeException('Migrazione inattesa');
+ $r=Migrator::run($p,ABLET_ROOT.'/database/migrations');if($r['applied']!==array_values(array_map('basename',array_filter(glob(ABLET_ROOT.'/database/migrations/*.sql'),static fn($f)=>(int)basename($f)>=12))))throw new RuntimeException('Migrazione inattesa');
  if($before!==$p->query('SELECT id,login,password_hash,role,status,session_version FROM users ORDER BY id')->fetchAll())throw new RuntimeException('Account alterati');
  if((int)$p->query('SELECT COUNT(*) FROM password_reset_tokens')->fetchColumn()!==0)throw new RuntimeException('Token inattesi');
  if($p->query("SELECT value FROM app_flags WHERE name='recovery_migration_test'")->fetchColumn()!=='valore precedente')throw new RuntimeException('Flag precedenti alterati');
  if($p->query("SHOW COLUMNS FROM app_flags LIKE 'value'")->fetch()['Type']!=='text')throw new RuntimeException('Capienza configurazione insufficiente');
  if(Migrator::run($p,ABLET_ROOT.'/database/migrations')['applied']!==[])throw new RuntimeException('Riesecuzione non idempotente');
- echo "Upgrade recupero 011→012: 6 controlli superati.\n";
+ echo "Upgrade recupero 011→corrente: 6 controlli superati.\n";
 }finally{foreach(glob($dir.'/*') as $f)unlink($f);rmdir($dir);}

@@ -11,7 +11,19 @@ final class AccountApi
         App::route('POST','/api/register',[self::class,'signup']);
         App::route('GET','/api/psy/account',[self::class,'profile'],'psychologist');
         App::route('PUT','/api/psy/account',[self::class,'save'],'psychologist');
+        App::route('POST','/api/psy/account/pin',[self::class,'pinCreate'],'psychologist');
+        App::route('DELETE','/api/psy/account/pin',[self::class,'pinDelete'],'psychologist');
     }
+    private static function pinAuthorize(): int
+    {
+        $u=App::user();if($u['role']!=='psychologist')throw new ApiError(403,'pin_non_consentito');
+        App::rateLimit('pin-manage:'.$u['id'],5,600);
+        $in=App::input();$q=Database::pdo()->prepare('SELECT password_hash FROM users WHERE id=?');$q->execute([$u['id']]);
+        if(!is_string($in['password']??null)||!password_verify($in['password'],$q->fetchColumn()))throw new ApiError(401,'credenziali_non_valide');
+        return $u['id'];
+    }
+    public static function pinCreate(): array {$id=self::pinAuthorize();$r=\Ablet\Service\AccessPin::issue($id,(int)App::user()['session_version']);App::audit('pin_generated','users',$id);return $r;}
+    public static function pinDelete(): array {$id=self::pinAuthorize();\Ablet\Service\AccessPin::revoke($id);App::audit('pin_revoked','users',$id);return ['ok'=>true];}
     public static function validated(array $in):array
     {
         foreach (['full_name','profession','organization','biography'] as $key) {

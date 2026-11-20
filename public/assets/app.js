@@ -30,7 +30,7 @@ const ERR = {
   autorizzazione_audio_provider_mancante: 'Manca l’autorizzazione dedicata all’invio audio: chiedi al professionista di registrarla.', voce_server_non_configurata: 'Configura il motore vocale server in Voce e avatar.', scegli_provider_audio: 'Scegli un provider per l’audio.', prompt_troppo_lungo: 'Il prompt supera il limite configurato: riduci il materiale o usa la modalità economica.',
   accesso_non_corrispondente: 'Le credenziali appartengono all’altra area. Torna alla scelta dell’accesso e seleziona quella corretta.',
   non_autenticato: 'La sessione è scaduta: accedi di nuovo.', credenziali_non_valide: 'Codice o password non corretti.', troppe_richieste: 'Troppe richieste ravvicinate: riprova fra qualche minuto.',
-  profilo_non_valido: 'Controlla nome, professione e lunghezza dei campi.', email_non_valida:'Inserisci un indirizzo e-mail valido.', password_non_valida:'Usa almeno 12 caratteri e una password non eccessivamente lunga.', account_gia_presente:'Questo codice di accesso è già utilizzato. Accedi con il tuo account.', registrazione_disabilitata:'La registrazione non è attiva in questa installazione.', conferma_informazioni_account:'Conferma di aver letto le informazioni sull’account.',
+  limite_token_non_valido:'Il tetto token deve essere un intero tra 0 e 4.294.967.295.', memoria_non_valida:'Controlla i campi: massimo 500 caratteri nelle indicazioni.', memoria_superata:'La memoria è stata modificata altrove. Riapri la scheda prima di salvare.', pin_non_disponibile:'Accesso PIN non disponibile: contatta il responsabile dell’installazione.', pin_non_consentito:'PIN disponibile solo per studenti e professionisti attivi.', profilo_non_valido: 'Controlla nome, professione e lunghezza dei campi.', email_non_valida:'Inserisci un indirizzo e-mail valido.', password_non_valida:'Usa almeno 12 caratteri e una password non eccessivamente lunga.', account_gia_presente:'Questo codice di accesso è già utilizzato. Accedi con il tuo account.', registrazione_disabilitata:'La registrazione non è attiva in questa installazione.', conferma_informazioni_account:'Conferma di aver letto le informazioni sull’account.',
   chiave_installazione_non_valida:'Chiave di installazione non corretta.', super_admin_gia_presente:'Esiste già un super admin. Usa il suo accesso dedicato.', contenuto_modificato_ricarica:'La bozza è stata modificata da un’altra richiesta. Ricarica prima di salvare.', formato_immagine_non_valido:'Usa un PNG, JPEG o WebP fino a 4096 pixel per lato e 10 milioni di pixel totali.', immagine_non_valida:'Controlla il file, il limite di 2 MB e il testo alternativo.', testo_non_valido:'Uno dei testi non è valido o supera il limite.',
   recupero_email_non_configurato:'Il recupero via e-mail non è ancora attivo. Contatta il super admin.', link_recupero_non_valido:'Il collegamento non è valido, è scaduto oppure è già stato usato. Richiedine uno nuovo.', configurazione_posta_non_valida:'Controlla mittente e URL pubblico: serve l’indirizzo HTTPS completo dell’installazione, senza query o credenziali.',
   non_autorizzato: 'Operazione non consentita.', non_trovato: 'Elemento non trovato.', errore_interno: 'Si è verificato un errore. Il lavoro svolto finora è salvato.',
@@ -91,22 +91,24 @@ function topbar() {
     h('button', { onclick: guard(() => logout()) }, 'Esci'));
 }
 
-function login() {
+function login(usePassword = false) {
   const portal = new URLSearchParams(location.search).get('accesso');
   const role = portal === 'studente' ? 'student' : portal === 'docente' ? 'psychologist' : portal === 'admin' ? 'admin' : null;
   const studentLink = `${BASE}/?accesso=studente`, teacherLink = `${BASE}/?accesso=docente`;
   if (new URLSearchParams(location.search).get('recupero')==='password') { passwordRecovery(); return; }
   if (new URLSearchParams(location.search).get('registrazione') === 'professionista') { registration(); return; }
   if (!role) { publicHome(); return; }
+  const usePin = role !== 'admin' && !usePassword;
   const err = h('p', { class: 'small', role: 'alert' });
   const f = h('form', { class: 'card', onsubmit: async (e) => {
     e.preventDefault(); err.textContent = '';
-    try { const r = await api('POST', '/api/login', { login: f.login.value, password: f.password.value, expected_role: role }); S.csrf = r.csrf; S.user = r.user; boot(); } catch (x) { err.textContent = errText(x); }
+    try { const r = await api('POST', '/api/login', usePin ? {pin:f.pin.value,expected_role:role} : { login: f.login.value, password: f.password.value, expected_role: role }); S.csrf = r.csrf; S.user = r.user; boot(); } catch (x) { err.textContent = errText(x); }
   } },
     h('div', { class: 'brand' }, h('i', { 'aria-hidden': 'true' })), h('h1', {}, role === 'student' ? 'Accesso studente' : role === 'admin' ? 'Accesso super admin' : 'Accesso docente / psicologo'),
     h('p', { class: 'muted' }, 'Uno spazio per organizzare lo studio, un passo alla volta.'),
-    h('label', { for: 'login' }, role === 'student' ? 'Codice di accesso' : 'Codice di accesso o e-mail'), h('input', { id: 'login', name: 'login', autocomplete: 'username', required: true, autocapitalize: 'none' }),
-    h('label', { for: 'password' }, 'Password'), h('input', { id: 'password', name: 'password', type: 'password', autocomplete: 'current-password', required: true }),
+    ...(usePin ? [h('label',{for:'pin'},'PIN di 6 cifre'),h('input',{id:'pin',name:'pin',type:'password',inputmode:'numeric',pattern:'[0-9]{6}',minlength:6,maxlength:6,autocomplete:'off',required:true}),h('p',{class:'small'},role==='student'?'Chiedi il tuo PIN al professionista.':'Attiva il PIN da Impostazioni applicazione → Il mio profilo, dopo il primo accesso con password.')] : [h('label', { for: 'login' }, role === 'student' ? 'Codice di accesso' : 'Codice di accesso o e-mail'), h('input', { id: 'login', name: 'login', autocomplete: 'username', required: true, autocapitalize: 'none' }),
+    h('label', { for: 'password' }, 'Password'), h('input', { id: 'password', name: 'password', type: 'password', autocomplete: 'current-password', required: true })]),
+    role!=='admin'?h('button',{type:'button',onclick:()=>login(!usePassword)},usePin?'Accedi con codice / e-mail e password':'Accedi con il solo PIN'):null,
     err, role !== 'student' ? h('p',{},h('a',{href:`${BASE}/?recupero=password`},'Password dimenticata?')) : null, role === 'psychologist' ? h('p', {}, h('a', {href:`${BASE}/?registrazione=professionista`},'Nuovo account? Crea il tuo profilo')) : null, h('p', {}, h('a', { href: `${BASE}/` }, '← Scegli un altro accesso')), h('div', { class: 'row' }, h('button', { class: 'primary', type: 'submit' }, 'Accedi')),
     h('p', { class: 'small muted' }, 'ABLET usa un sistema di intelligenza artificiale di supporto allo studio. Non è una persona e non sostituisce insegnanti o psicologi.'));
   clear(root).append(h('main', { class: 'login', id: 'main' }, f));

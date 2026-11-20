@@ -289,6 +289,8 @@ final class TurnService
         $fp->execute([$c['student_id']]);
         $profile = $fp->fetch() ?: null;
         $age = $profile['age_band'] ?? null;
+        $memory=StudentMemory::forAgent((int)$c['owner_id'],(int)$c['student_id'],(int)$c['activity_id']);
+        if($memory!==null){$profile??=[];$profile['longitudinal_memory']=$memory;}
         $turn = PromptCompiler::buildTurn($prompt, $state, $c['materials'], $history, $profile);
         $schema = (string)file_get_contents(ABLET_ROOT . '/resources/schema/agent_output.schema.json');
         $tail = $turn['context'] . "\n\n" . \Ablet\Domain\Agent\Delivery::instructions($age) . "\n\n" . (($trigger['note'] ?? '') !== '' ? "EVENTO (generato dal server): {$trigger['note']}\n" : '')

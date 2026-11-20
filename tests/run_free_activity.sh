@@ -2,6 +2,7 @@
 # ATTENZIONE: azzera il database configurato. Solo database di test, APP_ENV=development.
 set -euo pipefail
 cd "$(dirname "$0")/.."
+php -r 'require "src/bootstrap.php"; if (Ablet\Support\Env::get("APP_ENV")!=="development" || !str_contains(strtolower(Ablet\Support\Env::get("DB_NAME","")),"test")) {fwrite(STDERR,"Rifiutato: suite distruttiva consentita solo su database di test in development.\n");exit(1);}'
 php bin/migrate.php --fresh >/dev/null
 php database/seeds/demo.php --quiet
 php tests/free_activity.php

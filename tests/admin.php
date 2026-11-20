@@ -11,13 +11,15 @@ final class AdminClient{
  function req(string $method,string $path,?array $body=null,bool $csrf=true):array{global $app;$ch=curl_init($app.$path);curl_setopt_array($ch,[CURLOPT_RETURNTRANSFER=>true,CURLOPT_CUSTOMREQUEST=>$method,CURLOPT_COOKIEFILE=>$this->jar,CURLOPT_COOKIEJAR=>$this->jar,CURLOPT_HTTPHEADER=>['Content-Type: application/json','X-CSRF-Token: '.($csrf?$this->csrf:'')],CURLOPT_TIMEOUT=>10]);if($body!==null)curl_setopt($ch,CURLOPT_POSTFIELDS,json_encode($body));$raw=curl_exec($ch);$s=curl_getinfo($ch,CURLINFO_RESPONSE_CODE);curl_close($ch);return [$s,json_decode((string)$raw,true),$raw];}
  function login(string $login,string $pw,string $role='psychologist'):array{$this->csrf=$this->req('GET','/api/me')[1]['csrf'];$r=$this->req('POST','/api/login',['login'=>$login,'password'=>$pw,'expected_role'=>$role]);if(isset($r[1]['csrf']))$this->csrf=$r[1]['csrf'];return $r;}
 }
-$a=new AdminClient();$anon=new AdminClient();ac('Admin richiede autenticazione',$anon->req('GET','/api/admin/users')[0]===401);
+$a=new AdminClient();$anon=new AdminClient();ac('Versione riservata senza login',$anon->req('GET','/api/admin/version')[0]===401);ac('Admin richiede autenticazione',$anon->req('GET','/api/admin/users')[0]===401);
 ac('Professionista accede con le credenziali esistenti',$a->login('demo.psicologo','Prova-demo.psicologo')[0]===200);
 ac('Professionista non entra nell’area admin',$a->req('GET','/api/admin/users')[0]===403);
+ac('Versione riservata al super admin',$a->req('GET','/api/admin/version')[0]===403);
 ac('Chiave errata non promuove',$a->req('POST','/api/psy/activate-admin',['owner_key'=>'errata'])[0]===403);
 ac('Chiave proprietario abilita solo il primo admin',$a->req('POST','/api/psy/activate-admin',['owner_key'=>Env::get('INSTALL_KEY')])[0]===200);
 $adminLogin=new AdminClient();ac('Accesso dedicato super admin disponibile',$adminLogin->login('demo.psicologo','Prova-demo.psicologo','admin')[0]===200);
 ac('Ruolo amministratore verificato dal server',$a->req('GET','/api/me')[1]['user']['role']==='admin');
+[$versionStatus,$versionInfo]=$a->req('GET','/api/admin/version');ac('Versione installata letta dal codice server',$versionStatus===200&&$versionInfo===['version'=>\Ablet\Support\Version::CURRENT]);
 ac('Nessuna seconda attivazione dopo il primo admin',$a->req('POST','/api/psy/activate-admin',['owner_key'=>Env::get('INSTALL_KEY')])[0]===409);
 ac('Admin conserva il proprio spazio professionale',$a->req('GET','/api/psy/bootstrap')[0]===200);
 $body=['full_name'=>'Professionista admin test','profession'=>'educator','organization'=>'Test','biography'=>'','login'=>'admin-created-test'];
