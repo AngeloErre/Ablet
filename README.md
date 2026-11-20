@@ -3,9 +3,23 @@
 Piattaforma web in italiano per sostenere l'autoregolazione dell'apprendimento con un agente pedagogico conversazionale.
 Committente scientifico: Prof. Angelo Rega.
 
-**Stato: MVP con modalità Attività libera (aggiornamento 0.14.0).** Frontend HTML/CSS/JavaScript senza dipendenze, backend PHP, database MySQL/MariaDB.
+**Stato: MVP con modalità Attività libera (aggiornamento 0.15.0).** Frontend HTML/CSS/JavaScript senza dipendenze, backend PHP, database MySQL/MariaDB.
 
 > La riuscita tecnica dell'MVP non equivale alla sua validazione scientifica: soglie, livelli di supporto, codebook e lessico di polarità sono parametri progettuali da validare.
+
+## Versione 0.15.0 — memoria longitudinale compatta
+
+La scheda **Studenti → Memoria dello studente** presenta riepiloghi descrittivi delle sessioni concluse, con accesso alla sessione di origine. Ogni chiusura consolida automaticamente un singolo delta JSON numerico: passi dichiarati completati, richieste di indizi, difficoltà segnalate, cambi di strategia, numero di messaggi in riflessione, presenza di strategia e stima dichiarate, autoefficacia/difficoltà attesa dichiarate (se disponibili, scala 1–5), supporto e ampiezza dei passi. La chiusura incompleta resta distinta. Non si copiano chat, non si inferiscono emozioni o capacità, non si generano punteggi psicometrici né nuove analisi LLM.
+
+Il professionista può aggiungere **500 caratteri** di indicazioni, disattivare l'uso della memoria o escludere/reincludere singole sessioni. Il contesto è aggiornato a ogni nuova chiamata dell'agente: finestra di 20 sessioni consolidate, massimo 5 inviate con priorità alla stessa attività e limite 6.000 byte per il blocco JSON (non è un limite in token né del prompt totale). Altre attività sono identificate esplicitamente. Solo le indicazioni professionali contengono testo libero; si inviano come dati subordinati al protocollo. Nessun trend automatico o sintesi narrativa interpretativa. Le sessioni simulate sono escluse; quelle con agente demo sono segnalate. Le sessioni abbandonate senza chiusura non producono un delta.
+
+Per le sessioni pregresse usare **Recupera ultime 20 sessioni già concluse**. I riepiloghi sono idempotenti e non duplicano sessioni. La tabella corrente è calcolata dai delta, evitando copie ripetute della sintesi; le esclusioni e le modifiche alle indicazioni vengono registrate nell'audit senza duplicarne il contenuto. Gli aggiornamenti della scheda hanno controllo di revisione per non sovrascrivere modifiche concorrenti. I riepiloghi sono collegati alle sessioni: cancellazione/retention delle sessioni elimina anche le relative evidenze; cancellazione dello studente elimina anche le impostazioni. L'export include scheda, indicazioni ed esclusioni, oltre a tutti i delta del professionista. Il testo delle indicazioni resta fino a modifica o cancellazione dello studente: verificarlo quando si eliminano le sessioni di riferimento.
+
+**Installazione:** conservare configurazioni e dati, applicare la migrazione **014_student_memory** con `install.php` e chiave di installazione (oppure `php bin/migrate.php`), poi `refresh.php`. Se si proviene da versioni precedenti, vengono applicate anche le migrazioni mancanti. Mai `--fresh` su dati reali. Il numero nel footer Super admin diventa 0.15.0.
+
+**Verifiche dedicate:** `php tests/student_memory.php` (38 controlli di servizio/HTTP), `node tests/student_memory_ui.cjs` (12 controlli DOM) e `php tests/upgrade_memory.php` (solo database di test: aggiornamento da schema 013 e idempotenza). La suite PHP include questi controlli di servizio e aggiornamento.
+
+**Spazio e costi:** un delta compatto per chiusura e una riga per coppia professionista/studente; il totale cresce con le sessioni conservate. I contatori non costituiscono una validazione del modello dello studente. Il blocco è limitato in byte, ma occupa comunque token nella chiamata dell'agente; nessuna chiamata di consolidamento aggiuntiva. Il numero di byte mostrato nella scheda riguarda la risposta JSON, non indici, overhead o backup del database.
 
 ## Versione 0.14.0 — accesso con il solo PIN
 

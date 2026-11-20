@@ -5,5 +5,5 @@ namespace Ablet\Support;
 /** Versione del codice distribuito, indipendente dalle revisioni dei contenuti della homepage. */
 final class Version
 {
-    public const CURRENT = '0.14.0';
+    public const CURRENT = '0.15.0';
 }

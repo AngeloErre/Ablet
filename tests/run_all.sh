@@ -19,10 +19,12 @@ php tests/activity_edit_http.php
 
 MOCK=http://127.0.0.1:8102 php tests/provider_reliability.php
 
+php tests/student_memory.php
 php tests/pin_access.php
 php tests/accounts.php
 php tests/admin.php
 php tests/password_recovery.php
+php tests/upgrade_memory.php
 
 if [[ "${ABLET_STRESS:-0}" == "1" ]]; then
   php bin/migrate.php --fresh >/dev/null

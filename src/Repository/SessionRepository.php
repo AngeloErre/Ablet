@@ -167,6 +167,7 @@ final class SessionRepository
             $ev = self::recordEvent($sessionId, $actor, $clock, ['action' => $action, 'from' => $s['state'], 'to' => $new['state']], $clientEventId, $pdo);
             $pdo->prepare('INSERT INTO state_transitions (session_id, action, from_state, to_state, actor, event_id) VALUES (?,?,?,?,?,?)')
                 ->execute([$sessionId, $action, $s['state'], $new['state'], $actor, $ev['id']]);
+            if ($closed) \Ablet\Service\StudentMemory::capture($sessionId,$pdo);
             return ['ok' => true, 'state' => $new['state'], 'state_version' => $s['state_version'] + 1];
         });
     }

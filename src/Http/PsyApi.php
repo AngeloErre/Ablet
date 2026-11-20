@@ -40,6 +40,10 @@ final class PsyApi
         $r('PUT', '/students/{id}/profile', 'studentProfile');
         $r('PUT', '/students/{id}/model', 'studentModel');
         $r('GET', '/students/{id}/export', 'studentExport');
+        $r('GET', '/students/{id}/memory', 'memoryView');
+        $r('PUT', '/students/{id}/memory', 'memorySave');
+        $r('POST', '/students/{id}/memory/rebuild', 'memoryRebuild');
+        $r('POST', '/students/{id}/memory/{sid}', 'memoryExclude');
         $r('DELETE', '/students/{id}', 'studentDelete');
         $r('POST', '/groups', 'groupCreate');
         $r('PUT', '/groups/{id}', 'groupUpdate');
@@ -232,6 +236,10 @@ final class PsyApi
         return ['ok' => true];
     }
 
+    public static function memoryView(array $a):array {self::own('student',(int)$a['id']);return \Ablet\Service\StudentMemory::view(self::me(),(int)$a['id']);}
+    public static function memorySave(array $a):array {self::own('student',(int)$a['id']);$r=\Ablet\Service\StudentMemory::save(self::me(),(int)$a['id'],App::input());App::audit('student_memory_updated','users',(int)$a['id'],['revision'=>$r['revision'],'enabled'=>$r['enabled']]);return $r;}
+    public static function memoryRebuild(array $a):array {self::own('student',(int)$a['id']);App::rateLimit('memory:'.self::me(),10,600);\Ablet\Service\StudentMemory::rebuild(self::me(),(int)$a['id']);return self::memoryView($a);}
+    public static function memoryExclude(array $a):array {self::own('student',(int)$a['id']);$in=App::input();if(!is_bool($in['excluded']??null))throw new ApiError(422,'memoria_non_valida');\Ablet\Service\StudentMemory::exclude(self::me(),(int)$a['id'],(int)$a['sid'],$in['excluded']);App::audit('student_memory_reviewed','sessions',(int)$a['sid'],['excluded'=>$in['excluded']]);return ['ok'=>true];}
     public static function studentExport(array $a): array
     {
         $s = self::own('student', (int)$a['id']);
@@ -240,6 +248,8 @@ final class PsyApi
         return ['exported_at' => gmdate('c'), 'student' => ['pseudonym' => $s['pseudonym'], 'alias' => $s['display_alias']],
             'functional_profiles' => self::rows('SELECT age_band, strengths, accessibility_needs, constraints_text, preferences, version_no, created_at FROM functional_profiles WHERE student_id = ?', [$s['id']]),
             'consents' => self::rows('SELECT kind, granted_by, document_version, granted_at, revoked_at FROM consents WHERE student_id = ?', [$s['id']]),
+            'longitudinal_memory' => \Ablet\Service\StudentMemory::view(self::me(),(int)$s['id']),
+            'memory_deltas' => self::rows('SELECT d.session_id,d.facts,d.excluded FROM student_memory_deltas d JOIN sessions ms ON ms.id=d.session_id JOIN activities ma ON ma.id=ms.activity_id WHERE ms.student_id=? AND ma.owner_id=? ORDER BY d.session_id',[$s['id'],self::me()]),
             'sessions' => $sessions];
     }
 
